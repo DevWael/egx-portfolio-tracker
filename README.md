@@ -10,7 +10,7 @@ A personal, single-user tool to track equity positions on the **Egyptian Exchang
 |------|-------|-------|
 | **1. `packages/core`** | SQLite data layer, repositories, portfolio math, alerts, digest, EODHD client | ✅ **Complete** — 50 tests |
 | **3. `apps/web`** | Next.js dashboard + per-ticker pages | ✅ **Complete** — runnable, 11 tests |
-| **2. `apps/mcp`** | MCP server exposing core as tools for Claude Code | ⏳ Planned |
+| **2. `apps/mcp`** | MCP server exposing core as tools for Claude Code | ✅ **Complete** |
 
 The EODHD client is verified end-to-end against **live EGX data** (real historical daily closes for `.EGX` tickers).
 
@@ -78,6 +78,16 @@ EODHD_API_KEY=your_key_here
 ```
 
 Then click **Refresh prices** to pull up to a year of daily history for your tickers. Without a key, tracking and demo data still work fully. EGX tickers use the `CODE.EGX` format (e.g. `COMI.EGX` for Commercial International Bank). Free tier: 1 year of history, 20 calls/day.
+
+## MCP server (Claude Code)
+
+Drive the portfolio by chatting in Claude Code. The MCP server shares the web app's database.
+
+```bash
+claude mcp add egx -- pnpm -C /absolute/path/to/EGX --filter @egx/mcp start
+```
+
+Set `EODHD_API_KEY` (for `refresh_prices`) and optionally `EGX_DB_PATH` in the environment Claude Code launches with. Then ask things like *"how's my portfolio?"*, *"record a buy of 100 COMI.EGX at 84.15"*, or *"any alerts crossed?"* — tools speak **EGP**. Available tools: `list_positions`, `get_portfolio_summary`, `list_transactions`, `get_price_history`, `list_watchlist`, `get_triggered_alerts`, `record_transaction`, `delete_transaction`, `set_alert`, `upsert_security`, `refresh_prices`.
 
 ### Tests & core demo
 
