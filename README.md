@@ -11,8 +11,8 @@ A personal, single-user tool to track equity positions on the **Egyptian Exchang
 | Plan | Scope | State |
 |------|-------|-------|
 | **1. `packages/core`** | SQLite data layer, repositories, portfolio math, alerts, digest, EODHD client | ✅ **Complete** — 48 tests passing |
+| **3. `apps/web`** | Next.js dashboard — portfolio, transactions, watchlist, digest | ✅ **Complete** — runnable |
 | **2. `apps/mcp`** | MCP server exposing core as tools for Claude Code | ⏳ Planned |
-| **3. `apps/web`** | Next.js dashboard (see the [EGX Folio design mockup](docs/design/mockups/egx-folio.html)) | ⏳ Planned |
 
 ## Architecture
 
@@ -51,13 +51,24 @@ pnpm --filter @egx/core test        # run the core test suite
 pnpm --filter @egx/core typecheck   # type-check
 ```
 
-### See it work (no API key, no network)
+### Run the web app
+
+```bash
+pnpm install
+pnpm --filter @egx/web dev     # http://localhost:3000
+```
+
+Open http://localhost:3000 and click **Load demo** to populate a sample portfolio, or add your own transactions and watchlist alerts. The dashboard shows holdings, unrealized/realized P&L, top movers, and the daily digest; the watchlist marks alerts crossed at the latest close. Data persists to a local SQLite file at `apps/web/data/egx.db` (git-ignored; override with `EGX_DB_PATH`). Set `EODHD_API_KEY` in `apps/web/.env.local` to fetch live EOD prices via the **Refresh prices** button — without it, tracking and demo data still work fully.
+
+The app runs on Next.js 16 (webpack) + React 19; `better-sqlite3` runs server-side only.
+
+### See the core engine (no API key, no network)
 
 ```bash
 pnpm --filter @egx/core demo
 ```
 
-Seeds a sample portfolio (COMI, HRHO, SWDY, FWRY + a closed EAST round-trip), "fetches" end-of-day prices through a stubbed EODHD client, and prints the portfolio summary, realized/unrealized P&L, triggered alerts, and daily digest — exactly as the real engine computes them. This is the fastest way to see the core in action; the interactive surfaces (MCP server, web dashboard) come in Plans 2 & 3.
+Seeds a sample portfolio (COMI, HRHO, SWDY, FWRY + a closed EAST round-trip), "fetches" end-of-day prices through a stubbed EODHD client, and prints the portfolio summary, realized/unrealized P&L, triggered alerts, and daily digest — the fastest way to see the engine's output in the terminal.
 
 ### Live prices
 
