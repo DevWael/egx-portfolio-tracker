@@ -17,9 +17,12 @@ function RangeBar({ low, high, last, pctFromLow, pctFromHigh }: { low: number; h
         <div className="range-marker" style={{ left: `${pos}%` }} />
       </div>
       <div className="range-ends">
-        <span>Low <b>{egp(low)}</b>{pctFromLow !== null ? <> · <span className="gain">{pct(pctFromLow)}</span></> : null}</span>
-        <span style={{ textAlign: "right" }}>High <b>{egp(high)}</b>{pctFromHigh !== null ? <> · <span className="loss">{pct(pctFromHigh)}</span></> : null}</span>
+        <span><span className="muted">52-wk low</span><b>{egp(low)}</b></span>
+        <span><span className="muted">52-wk high</span><b>{egp(high)}</b></span>
       </div>
+      {pctFromLow !== null && pctFromHigh !== null ? (
+        <div className="range-caption">Current <b>{egp(last)}</b> — <span className="gain">{pct(pctFromLow)}</span> from low · <span className="loss">{pct(pctFromHigh)}</span> from high</div>
+      ) : null}
     </div>
   );
 }
@@ -63,7 +66,7 @@ export default async function TickerPage({ params }: { params: Promise<{ symbol:
       <div className="panel panel-pad">
         <div className="section-head">
           <span className="section-label">52-week range</span>
-          {d.lastClose !== null ? <span className="range-price">{egp(d.lastClose)}</span> : null}
+          {hasRange ? <span className="range-pct">{Math.round(((d.lastClose! - s.low52!) / (s.high52! - s.low52!)) * 100)}% of range</span> : null}
         </div>
         {hasRange
           ? <RangeBar low={s.low52!} high={s.high52!} last={d.lastClose!} pctFromLow={s.pctFromLow} pctFromHigh={s.pctFromHigh} />

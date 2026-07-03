@@ -173,7 +173,12 @@ tbody tr:hover td { background: var(--panel-2); }
 .stat-line > span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
 .section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
 .section-head .section-label { margin-bottom: 0; }
-.range-price { font-size: 16px; font-weight: 700; }
+.range-pct { font-size: 13px; font-weight: 600; color: var(--text-dim); }
+.range-ends > span { display: flex; flex-direction: column; gap: 2px; }
+.range-ends > span:last-child { align-items: flex-end; text-align: right; }
+.range-ends .muted { font-size: 11px; }
+.range-caption { font-size: 13px; color: var(--text-dim); margin-top: 12px; }
+.range-caption b { color: var(--text); font-weight: 600; }
 .range-track { position: relative; height: 8px; border-radius: 999px; background: var(--panel-2); margin: 2px 4px 12px; }
 .range-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: linear-gradient(90deg, var(--green), var(--accent)); }
 /* downward caret marking where the current price sits — a read-only pointer, not a slider handle */
