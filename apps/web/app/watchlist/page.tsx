@@ -5,6 +5,7 @@ import { createAlert, toggleAlert, removeAlert } from "./actions";
 export const dynamic = "force-dynamic";
 
 export default function WatchlistPage() {
+  data.evaluate(); // stamp any alerts crossed at the latest close before listing
   const alerts = data.alerts();
   return (
     <div className="grid" style={{ gap: 20 }}>

@@ -4,6 +4,7 @@ import {
   listTransactions,
   listSecurities,
   listAlerts,
+  evaluateAlerts,
   buildDigest,
 } from "@egx/core";
 import { getDb } from "./db.js";
@@ -13,5 +14,7 @@ export const data = {
   transactions: () => listTransactions(getDb()),
   securities: () => listSecurities(getDb()),
   alerts: () => listAlerts(getDb()),
+  /** Evaluate active alerts against the latest close, stamping any newly crossed. */
+  evaluate: () => evaluateAlerts(getDb()),
   digest: () => buildDigest(getDb()),
 };

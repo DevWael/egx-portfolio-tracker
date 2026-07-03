@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import {
   upsertSecurity, addTransaction, addAlert, upsertPrice,
-  listSecurities, listTransactions, listAlerts,
+  listTransactions, listAlerts,
   EodhdClient, syncPrices,
 } from "@egx/core";
 import { getDb } from "@/lib/db";
