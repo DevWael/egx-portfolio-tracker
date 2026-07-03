@@ -37,6 +37,18 @@ describe("evaluateAlerts", () => {
     expect(evaluateAlerts(db)).toHaveLength(1);
   });
 
+  it("does not trigger 'below' when close is above target", () => {
+    addAlert(db, { ticker: "COMI.EGX", targetPrice: 5000, direction: "below" });
+    upsertPrice(db, price(5100));
+    expect(evaluateAlerts(db)).toHaveLength(0);
+  });
+
+  it("triggers 'above' when close equals target exactly", () => {
+    addAlert(db, { ticker: "COMI.EGX", targetPrice: 8415, direction: "above" });
+    upsertPrice(db, price(8415));
+    expect(evaluateAlerts(db)).toHaveLength(1);
+  });
+
   it("skips already-triggered alerts on re-run", () => {
     addAlert(db, { ticker: "COMI.EGX", targetPrice: 8000, direction: "above" });
     upsertPrice(db, price(8415));
