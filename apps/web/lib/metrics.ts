@@ -65,7 +65,7 @@ export function dashboard(): DashboardVM {
       ...h,
       sector: sectorByTicker.get(h.ticker) ?? null,
       dayChangePct,
-      spark: hist.slice(-90).map((b) => b.close),
+      spark: hist.slice(-365).map((b) => b.close), // show up to ~1 year of closes
       txns: listTransactions(db, h.ticker),
     };
   });

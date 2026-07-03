@@ -105,8 +105,8 @@ export async function refreshPrices() {
   ]));
   if (tickers.length === 0) return { ok: false, message: "Nothing to refresh — add positions first." };
   const to = new Date().toISOString().slice(0, 10);
-  // ~150 calendar days back → ~100 trading days, enough to fill the 90-day chart
-  const from = new Date(Date.now() - 150 * 864e5).toISOString().slice(0, 10);
+  // ~1 year back (max the free EODHD tier allows; paid keys can go further)
+  const from = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10);
   const client = new EodhdClient({ apiKey: key });
   const stored = await syncPrices(db, client, tickers, from, to);
   revalidatePath("/");
