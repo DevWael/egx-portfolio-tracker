@@ -3,8 +3,10 @@ import {
   type DB,
   getPortfolioSummary, listSecurities, listTransactions, getPriceHistory,
   listAlerts, evaluateAlerts,
+  getSecurity, upsertSecurity, addTransaction, deleteTransaction, addAlert,
+  EodhdClient, syncPrices,
 } from "@egx/core";
-import { toEgp } from "./money.js";
+import { toEgp, toPiasters } from "./money.js";
 
 export interface McpTool {
   name: string;
@@ -104,5 +106,71 @@ export const tools: McpTool[] = [
         ticker: t.alert.ticker, direction: t.alert.direction,
         targetPrice: toEgp(t.alert.targetPrice), lastClose: toEgp(t.lastClose), lastCloseDate: t.lastCloseDate,
       })),
+  }),
+  defineTool({
+    name: "record_transaction",
+    description: "Record a buy or sell. Price and fee are in EGP. Auto-creates the security if unknown (name defaults to the ticker; use upsert_security to set a real name).",
+    inputSchema: {
+      ticker: z.string(),
+      side: z.enum(["buy", "sell"]),
+      qty: z.number().int().positive(),
+      price: z.number().nonnegative(),
+      fee: z.number().nonnegative().optional(),
+      tradedAt: z.string().optional(),
+      note: z.string().optional(),
+    },
+    handler: (db, a) => {
+      if (!getSecurity(db, a.ticker)) upsertSecurity(db, { ticker: a.ticker, name: a.ticker, sector: null, currency: "EGP" });
+      const tx = addTransaction(db, {
+        ticker: a.ticker, side: a.side, qty: a.qty,
+        price: toPiasters(a.price), fee: toPiasters(a.fee ?? 0), tradedAt: a.tradedAt, note: a.note ?? null,
+      });
+      return { ok: true, transaction: { ...tx, price: toEgp(tx.price), fee: toEgp(tx.fee) } };
+    },
+  }),
+  defineTool({
+    name: "delete_transaction",
+    description: "Delete a transaction by id.",
+    inputSchema: { id: z.number().int() },
+    handler: (db, { id }) => { deleteTransaction(db, id); return { ok: true }; },
+  }),
+  defineTool({
+    name: "set_alert",
+    description: "Add a price-target alert. Target in EGP; direction 'above' or 'below'. Auto-creates the security if unknown.",
+    inputSchema: {
+      ticker: z.string(),
+      targetPrice: z.number().positive(),
+      direction: z.enum(["above", "below"]),
+      note: z.string().optional(),
+    },
+    handler: (db, a) => {
+      if (!getSecurity(db, a.ticker)) upsertSecurity(db, { ticker: a.ticker, name: a.ticker, sector: null, currency: "EGP" });
+      const alert = addAlert(db, { ticker: a.ticker, targetPrice: toPiasters(a.targetPrice), direction: a.direction, note: a.note ?? null });
+      return { ok: true, alert: { ...alert, targetPrice: toEgp(alert.targetPrice) } };
+    },
+  }),
+  defineTool({
+    name: "upsert_security",
+    description: "Create or update a security's name and sector.",
+    inputSchema: { ticker: z.string(), name: z.string(), sector: z.string().optional() },
+    handler: (db, a) => { upsertSecurity(db, { ticker: a.ticker, name: a.name, sector: a.sector ?? null, currency: "EGP" }); return { ok: true }; },
+  }),
+  defineTool({
+    name: "refresh_prices",
+    description: "Fetch end-of-day prices from EODHD for the given tickers (default: all held and watched) over the last 365 days. Requires EODHD_API_KEY.",
+    inputSchema: { tickers: z.array(z.string()).optional() },
+    handler: async (db, { tickers }) => {
+      const key = process.env.EODHD_API_KEY;
+      if (!key) return { ok: false, message: "Set EODHD_API_KEY in the environment to fetch live prices." };
+      const list = tickers ?? Array.from(new Set([
+        ...listTransactions(db).map((t) => t.ticker),
+        ...listAlerts(db).map((al) => al.ticker),
+      ]));
+      if (list.length === 0) return { ok: false, message: "Nothing to refresh — add positions first." };
+      const to = new Date().toISOString().slice(0, 10);
+      const from = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10);
+      const stored = await syncPrices(db, new EodhdClient({ apiKey: key }), list, from, to);
+      return { ok: true, stored, tickers: list };
+    },
   }),
 ];
