@@ -13,7 +13,9 @@ const sign = (n: number | null) => (n === null ? "" : n > 0 ? "gain" : n < 0 ? "
 
 export default async function TickerPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;
-  const d = tickerDetail(decodeURIComponent(symbol));
+  let sym = symbol;
+  try { sym = decodeURIComponent(symbol); } catch { notFound(); } // malformed URL → 404, not 500
+  const d = tickerDetail(sym);
   if (!d) notFound();
   const s = d.stats;
   return (

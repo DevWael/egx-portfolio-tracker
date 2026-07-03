@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { egp, pct } from "@/lib/format";
 import { PriceChart } from "@/components/PriceChart";
 import type { HoldingRow } from "@/lib/metrics";
@@ -48,7 +49,7 @@ function RowGroup({ h, isOpen, onToggle }: { h: HoldingRow; isOpen: boolean; onT
             <div className="detail-grid">
               <div>
                 <PriceChart points={h.spark} id={h.ticker.replace(/\W/g, "")} />
-                <a href={`/ticker/${encodeURIComponent(h.ticker)}`} className="btn" style={{ marginTop: 12 }}>View details →</a>
+                <Link href={`/ticker/${encodeURIComponent(h.ticker)}`} className="btn" style={{ marginTop: 12, display: "inline-flex" }}>View details →</Link>
               </div>
               <div>
                 <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>Transaction history</div>
