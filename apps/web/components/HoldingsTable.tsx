@@ -92,12 +92,12 @@ function RowGroup({ h, isOpen, onToggle }: { h: HoldingRow; isOpen: boolean; onT
             <div className="detail-grid">
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-                  <span className="muted" style={{ fontSize: 12 }}>Last {h.spark.length} days</span>
-                  {chg !== null ? <span className={chg >= 0 ? "gain" : "loss"} style={{ fontSize: 13, fontWeight: 600 }}>{pct(chg)} {h.spark.length}d</span> : null}
+                  <span className="muted" style={{ fontSize: 12 }}>Last {h.spark.length} day{h.spark.length === 1 ? "" : "s"}</span>
+                  {chg !== null ? <span className={chg >= 0 ? "gain" : "loss"} style={{ fontSize: 13, fontWeight: 600 }}>{pct(chg)} · {h.spark.length}d</span> : null}
                 </div>
                 <AreaChart values={h.spark} up={(chg ?? 0) >= 0} id={h.ticker.replace(/\W/g, "")} />
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                  <span className="muted" style={{ fontSize: 12 }}>{h.spark.length} days ago</span>
+                  <span className="muted" style={{ fontSize: 12 }}>{h.spark.length} day{h.spark.length === 1 ? "" : "s"} ago</span>
                   <span className="muted" style={{ fontSize: 12 }}>Today · {egp(h.lastClose)}</span>
                 </div>
               </div>
