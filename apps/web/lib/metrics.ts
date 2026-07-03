@@ -2,14 +2,18 @@ import "server-only";
 import {
   getPortfolioSummary,
   listSecurities,
+  listTransactions,
   getPriceHistory,
   type HoldingValuation,
+  type Transaction,
 } from "@egx/core";
 import { getDb } from "./db.js";
 
 export interface HoldingRow extends HoldingValuation {
   sector: string | null;
   dayChangePct: number | null; // fraction, vs previous close
+  spark: number[]; // recent closes (piasters), oldest -> newest
+  txns: Transaction[]; // this ticker's transactions
 }
 
 export interface SectorSlice {
@@ -57,7 +61,13 @@ export function dashboard(): DashboardVM {
     } else if (h.marketValue !== null) {
       prevMarketValue += h.marketValue;
     }
-    return { ...h, sector: sectorByTicker.get(h.ticker) ?? null, dayChangePct };
+    return {
+      ...h,
+      sector: sectorByTicker.get(h.ticker) ?? null,
+      dayChangePct,
+      spark: hist.slice(-90).map((b) => b.close),
+      txns: listTransactions(db, h.ticker),
+    };
   });
 
   const bySector = new Map<string, number>();
