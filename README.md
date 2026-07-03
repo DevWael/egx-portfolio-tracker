@@ -1,6 +1,6 @@
 # EGX Portfolio Tracker
 
-A personal, single-user tool to track equity positions on the **Egyptian Exchange (EGX)**, value them against end-of-day prices from [EODHD](https://eodhd.com), and (planned) use **Claude Code** as an AI brain for portfolio analysis and research.
+A personal, single-user tool to track equity positions on the **Egyptian Exchange (EGX)**, value them against end-of-day prices from [EODHD](https://eodhd.com), and manage/analyze the portfolio from **Claude Code** via an MCP server.
 
 > **Not a trading platform.** EGX has no public retail trading API (neither the exchange nor brokers like Thndr, EFG Hermes, or Beltone expose one). This is a **tracker + advisory/analysis** tool — you place orders manually in your broker app. Buy/sell suggestions are for personal use only.
 
@@ -44,7 +44,8 @@ apps/web/            Next.js 16 App Router (React 19) — dashboard + ticker pag
   app/               routes: / · /transactions · /watchlist · /digest · /ticker/[symbol]
   components/        PriceChart, HoldingsTable, TickerChartStats, StatCards, …
   lib/               db (server-only singleton), data, metrics, stats, ticker, format
-apps/mcp/            (planned) MCP server for Claude Code
+apps/mcp/            stdio MCP server for Claude Code (tools over core; shares the web DB)
+  src/               db (shared), money (EGP↔piasters), tools (read+write), server, index
 docs/                design specs, implementation plans, UI brief + mockup
 ```
 
@@ -92,15 +93,15 @@ Set `EODHD_API_KEY` (for `refresh_prices`) and optionally `EGX_DB_PATH` in the e
 ### Tests & core demo
 
 ```bash
-pnpm -r test                        # core (50) + web (11)
+pnpm -r test                        # core (50) + web (11) + mcp (15)
 pnpm --filter @egx/core typecheck
 pnpm --filter @egx/core demo        # terminal demo of the engine (no key/network)
 ```
 
 ## Documentation
 
-- Specs: [core design](docs/superpowers/specs/2026-07-03-egx-portfolio-tracker-design.md) · [ticker page](docs/superpowers/specs/2026-07-03-ticker-page-design.md)
-- Plans: [core](docs/superpowers/plans/2026-07-03-egx-tracker-core.md) · [web](docs/superpowers/plans/2026-07-03-egx-tracker-web.md) · [ticker page](docs/superpowers/plans/2026-07-03-ticker-page.md)
+- Specs: [core design](docs/superpowers/specs/2026-07-03-egx-portfolio-tracker-design.md) · [ticker page](docs/superpowers/specs/2026-07-03-ticker-page-design.md) · [MCP server](docs/superpowers/specs/2026-07-04-mcp-server-design.md)
+- Plans: [core](docs/superpowers/plans/2026-07-03-egx-tracker-core.md) · [web](docs/superpowers/plans/2026-07-03-egx-tracker-web.md) · [ticker page](docs/superpowers/plans/2026-07-03-ticker-page.md) · [MCP server](docs/superpowers/plans/2026-07-04-mcp-server.md)
 - UI: [design brief](docs/design/claude-design-brief.md) · [dashboard mockup](docs/design/mockups/egx-folio.html)
 
 ## Disclaimer
