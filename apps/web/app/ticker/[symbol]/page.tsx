@@ -12,9 +12,6 @@ function RangeBar({ low, high, last, pctFromLow, pctFromHigh }: { low: number; h
   const pos = high > low ? Math.min(100, Math.max(0, ((last - low) / (high - low)) * 100)) : 50;
   return (
     <div>
-      <div className="range-cur" style={{ marginLeft: `${pos}%` }}>
-        <span style={{ display: "inline-block", transform: "translateX(-50%)" }}>{egp(last)}</span>
-      </div>
       <div className="range-track">
         <div className="range-fill" style={{ width: `${pos}%` }} />
         <div className="range-marker" style={{ left: `${pos}%` }} />
@@ -64,7 +61,10 @@ export default async function TickerPage({ params }: { params: Promise<{ symbol:
       </div>
 
       <div className="panel panel-pad">
-        <div className="section-label">52-week range</div>
+        <div className="section-head">
+          <span className="section-label">52-week range</span>
+          {d.lastClose !== null ? <span className="range-price">{egp(d.lastClose)}</span> : null}
+        </div>
         {hasRange
           ? <RangeBar low={s.low52!} high={s.high52!} last={d.lastClose!} pctFromLow={s.pctFromLow} pctFromHigh={s.pctFromHigh} />
           : <div className="dim">Not enough price history.</div>}
