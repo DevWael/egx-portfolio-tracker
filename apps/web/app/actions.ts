@@ -9,6 +9,8 @@ import { getDb } from "@/lib/db";
 
 export async function seedDemo() {
   const db = getDb();
+  // reset to a clean demo (idempotent — clicking again won't duplicate positions)
+  db.exec("DELETE FROM transactions; DELETE FROM prices; DELETE FROM watchlist_alerts; DELETE FROM securities;");
   const secs: [string, string, string][] = [
     ["COMI.EGX", "Commercial International Bank", "Banks"],
     ["HRHO.EGX", "EFG Holding", "Financials"],
