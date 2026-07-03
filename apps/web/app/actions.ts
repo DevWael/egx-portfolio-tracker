@@ -6,6 +6,7 @@ import {
   EodhdClient, syncPrices,
 } from "@egx/core";
 import { getDb } from "@/lib/db";
+import { snapshot, restoreLatest } from "@/lib/backup";
 
 function hashSeed(s: string): number {
   let h = 2166136261;
@@ -41,6 +42,7 @@ function priceSeries(ticker: string, prev: number, last: number): { date: string
 
 export async function seedDemo() {
   const db = getDb();
+  await snapshot("pre-demo").catch(() => {}); // safety net: snapshot before wiping, so this is recoverable
   // reset to a clean demo (idempotent — clicking again won't duplicate positions)
   db.exec("DELETE FROM transactions; DELETE FROM prices; DELETE FROM watchlist_alerts; DELETE FROM securities;");
   const secs: [string, string, string][] = [
@@ -111,4 +113,17 @@ export async function refreshPrices() {
   const stored = await syncPrices(db, client, tickers, from, to);
   revalidatePath("/");
   return { ok: true, message: `Stored ${stored} price bar(s).` };
+}
+
+export async function makeBackup() {
+  const path = await snapshot("manual");
+  return { ok: true, message: `Backup saved: ${path.split("/").pop()}` };
+}
+
+export async function restoreLatestBackup() {
+  const file = restoreLatest();
+  revalidatePath("/");
+  revalidatePath("/transactions");
+  revalidatePath("/watchlist");
+  return file ? { ok: true, message: `Restored from ${file}` } : { ok: false, message: "No backup found yet." };
 }

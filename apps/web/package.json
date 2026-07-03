@@ -8,7 +8,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "backup": "node scripts/backup.mjs"
   },
   "dependencies": {
     "@egx/core": "workspace:*",
@@ -19,6 +20,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.14.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
