@@ -21,7 +21,7 @@ function mixedFetch(): typeof fetch {
 }
 
 describe("syncPrices (network/malformed degradation)", () => {
-  it("stores the good ticker and skips the bad ticker without throwing", async () => {
+  it("continues past a failure that occurs FIRST in the batch and still stores the good ticker", async () => {
     const db: DB = openDb(":memory:");
     migrate(db);
     upsertSecurity(db, { ticker: "GOOD.EGX", name: "Good Co", sector: null, currency: "EGP" });
@@ -29,10 +29,32 @@ describe("syncPrices (network/malformed degradation)", () => {
 
     const client = new EodhdClient({ apiKey: "k", fetchImpl: mixedFetch() });
 
-    const stored = await syncPrices(db, client, ["GOOD.EGX", "BAD.EGX"], "2026-06-01", "2026-06-02");
+    // BAD.EGX is deliberately first: if syncPrices used `break` instead of
+    // `continue` on a per-ticker EodhdError, this would return 0 and never
+    // reach GOOD.EGX. Ordering the failure first is what forces that proof.
+    const stored = await syncPrices(db, client, ["BAD.EGX", "GOOD.EGX"], "2026-06-01", "2026-06-02");
 
     expect(stored).toBe(1);
     expect(getLatestPrice(db, "GOOD.EGX")).toMatchObject({ ticker: "GOOD.EGX", close: 1020 });
+    expect(getLatestPrice(db, "BAD.EGX")).toBeNull();
+  });
+
+  it("continues past a failure in the MIDDLE of a three-ticker batch", async () => {
+    const db: DB = openDb(":memory:");
+    migrate(db);
+    upsertSecurity(db, { ticker: "GOOD.EGX", name: "Good Co", sector: null, currency: "EGP" });
+    upsertSecurity(db, { ticker: "BAD.EGX", name: "Bad Co", sector: null, currency: "EGP" });
+    upsertSecurity(db, { ticker: "GOOD2.EGX", name: "Good Co 2", sector: null, currency: "EGP" });
+
+    const client = new EodhdClient({ apiKey: "k", fetchImpl: mixedFetch() });
+
+    const stored = await syncPrices(
+      db, client, ["GOOD.EGX", "BAD.EGX", "GOOD2.EGX"], "2026-06-01", "2026-06-02"
+    );
+
+    expect(stored).toBe(2);
+    expect(getLatestPrice(db, "GOOD.EGX")).toMatchObject({ ticker: "GOOD.EGX", close: 1020 });
+    expect(getLatestPrice(db, "GOOD2.EGX")).toMatchObject({ ticker: "GOOD2.EGX", close: 1020 });
     expect(getLatestPrice(db, "BAD.EGX")).toBeNull();
   });
 });

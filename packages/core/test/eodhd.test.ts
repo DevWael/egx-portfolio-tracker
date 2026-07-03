@@ -51,4 +51,11 @@ describe("EodhdClient", () => {
     const client = new EodhdClient({ apiKey: "k", fetchImpl: fakeFetch(200, { error: "not a list" }) });
     await expect(client.getEod("COMI.EGX", "2026-06-01", "2026-06-02")).rejects.toBeInstanceOf(EodhdError);
   });
+
+  it("throws EodhdError when a 200 body is not valid JSON", async () => {
+    const fetchImpl = (async () =>
+      new Response("<html>not json</html>", { status: 200 })) as unknown as typeof fetch;
+    const client = new EodhdClient({ apiKey: "k", fetchImpl });
+    await expect(client.getEod("COMI.EGX", "2026-06-01", "2026-06-02")).rejects.toBeInstanceOf(EodhdError);
+  });
 });
