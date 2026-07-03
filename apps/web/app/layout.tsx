@@ -6,8 +6,8 @@ export const metadata: Metadata = { title: "EGX Folio", description: "EGX portfo
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <Nav />
         <main className="container">{children}</main>
       </body>
