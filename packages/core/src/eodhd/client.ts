@@ -52,17 +52,26 @@ export class EodhdClient {
     if (!Array.isArray(json)) {
       throw new EodhdError(0, "EODHD returned unexpected EOD response shape");
     }
-    const rows = json as EodRow[];
-    return rows.map((r) => ({
-      ticker,
-      date: r.date,
-      open: toPiasters(r.open),
-      high: toPiasters(r.high),
-      low: toPiasters(r.low),
-      close: toPiasters(r.close),
-      volume: r.volume,
-      source: "eodhd",
-    }));
+    const rows = json as Array<Partial<EodRow> & { warning?: string; error?: string; message?: string }>;
+    const bars: PriceBar[] = rows
+      .filter((r) => typeof r.date === "string" && typeof r.close === "number" && Number.isFinite(r.close))
+      .map((r) => ({
+        ticker,
+        date: r.date as string,
+        open: toPiasters(r.open as number),
+        high: toPiasters(r.high as number),
+        low: toPiasters(r.low as number),
+        close: toPiasters(r.close as number),
+        volume: typeof r.volume === "number" ? r.volume : 0,
+        source: "eodhd",
+      }));
+    // EODHD returns e.g. [{"warning":"Data is limited by one year..."}] for
+    // plan/range issues — surface that instead of emitting NaN bars.
+    if (bars.length === 0) {
+      const note = rows.find((r) => r.warning || r.error || r.message);
+      if (note) throw new EodhdError(0, `EODHD: ${note.warning ?? note.error ?? note.message}`);
+    }
+    return bars;
   }
 
   async search(query: string): Promise<{ ticker: string; name: string }[]> {

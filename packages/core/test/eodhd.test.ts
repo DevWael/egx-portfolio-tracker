@@ -58,4 +58,26 @@ describe("EodhdClient", () => {
     const client = new EodhdClient({ apiKey: "k", fetchImpl });
     await expect(client.getEod("COMI.EGX", "2026-06-01", "2026-06-02")).rejects.toBeInstanceOf(EodhdError);
   });
+
+  it("surfaces a plan/range warning array instead of emitting NaN bars", async () => {
+    const client = new EodhdClient({
+      apiKey: "k",
+      fetchImpl: fakeFetch(200, [{ warning: "Data is limited by one year as you have free subscription" }]),
+    });
+    await expect(client.getEod("COMI.EGX", "2020-01-01", "2020-02-01")).rejects.toBeInstanceOf(EodhdError);
+    await expect(client.getEod("COMI.EGX", "2020-01-01", "2020-02-01")).rejects.toThrow(/one year/);
+  });
+
+  it("skips non-bar rows and keeps valid bars", async () => {
+    const client = new EodhdClient({
+      apiKey: "k",
+      fetchImpl: fakeFetch(200, [
+        { date: "2026-06-02", open: 80, high: 85, low: 79, close: 84.15, volume: 1000 },
+        { warning: "partial" },
+      ]),
+    });
+    const bars = await client.getEod("COMI.EGX", "2026-06-01", "2026-06-02");
+    expect(bars).toHaveLength(1);
+    expect(bars[0].close).toBe(8415);
+  });
 });
