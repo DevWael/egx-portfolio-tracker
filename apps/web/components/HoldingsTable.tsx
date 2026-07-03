@@ -1,119 +1,21 @@
 "use client";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { egp, pct } from "@/lib/format";
-import type { HoldingRow, SparkPoint } from "@/lib/metrics";
-
-function fmtDate(d: string): string {
-  const dt = new Date(d + "T00:00:00");
-  return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-const RANGES: [string, number | null][] = [["1M", 30], ["3M", 90], ["6M", 180], ["1Y", 365], ["Max", null]];
-
-function AreaChart({
-  points, up, id, onZoom, onReset,
-}: {
-  points: SparkPoint[];
-  up: boolean;
-  id: string;
-  onZoom: (localStart: number, localEnd: number) => void;
-  onReset: () => void;
-}) {
-  const [hi, setHi] = useState<number | null>(null);
-  const [dragStart, setDragStart] = useState<number | null>(null);
-  const [dragEnd, setDragEnd] = useState<number | null>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  if (points.length < 2) return <div className="dim" style={{ fontSize: 13 }}>Not enough price history yet.</div>;
-
-  const values = points.map((p) => p.close);
-  const W = 640, H = 150, pad = 8;
-  const min = Math.min(...values), max = Math.max(...values), span = max - min || 1;
-  const X = (i: number) => pad + (i / (values.length - 1)) * (W - pad * 2);
-  const Y = (v: number) => pad + (1 - (v - min) / span) * (H - pad * 2);
-  const line = values.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
-  const area = `M ${X(0).toFixed(1)},${H} L ` + values.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" L ") + ` L ${X(values.length - 1).toFixed(1)},${H} Z`;
-  const color = up ? "var(--green)" : "var(--red)";
-  const gid = `grad-${id}`;
-
-  function idxFromEvent(e: React.MouseEvent): number {
-    const r = wrapRef.current!.getBoundingClientRect();
-    const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-    return Math.round(f * (values.length - 1));
-  }
-  function onDown(e: React.MouseEvent) { const i = idxFromEvent(e); setDragStart(i); setDragEnd(i); setHi(null); }
-  function onMove(e: React.MouseEvent) { const i = idxFromEvent(e); if (dragStart != null) setDragEnd(i); else setHi(i); }
-  function onUp() {
-    if (dragStart != null && dragEnd != null) {
-      const a = Math.min(dragStart, dragEnd), b = Math.max(dragStart, dragEnd);
-      if (b - a >= 2) onZoom(a, b);
-    }
-    setDragStart(null); setDragEnd(null);
-  }
-  function onLeave() { setHi(null); setDragStart(null); setDragEnd(null); }
-
-  const dragging = dragStart != null && dragEnd != null && dragStart !== dragEnd;
-  const a = dragging ? Math.min(dragStart!, dragEnd!) : 0;
-  const b = dragging ? Math.max(dragStart!, dragEnd!) : 0;
-  const dot = !dragging && hi != null ? { xPct: (X(hi) / W) * 100, yPct: (Y(values[hi]) / H) * 100 } : null;
-
-  return (
-    <div
-      ref={wrapRef}
-      onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onLeave}
-      onDoubleClick={onReset}
-      style={{ position: "relative", cursor: "crosshair", userSelect: "none" }}
-    >
-      <svg width="100%" height="150" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block" }}>
-        <defs>
-          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.28" />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={area} fill={`url(#${gid})`} />
-        <polyline points={line} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
-        {dragging ? (
-          <rect x={X(a)} y={0} width={X(b) - X(a)} height={H} fill="var(--accent)" fillOpacity="0.14" stroke="var(--accent)" strokeOpacity="0.4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-        ) : hi != null ? (
-          <line x1={X(hi)} y1={0} x2={X(hi)} y2={H} stroke="var(--label)" strokeWidth="1" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
-        ) : null}
-      </svg>
-      {dot ? (
-        <>
-          <div style={{ position: "absolute", left: `${dot.xPct}%`, top: `${dot.yPct}%`, width: 9, height: 9, marginLeft: -4.5, marginTop: -4.5, borderRadius: "50%", background: color, boxShadow: "0 0 0 3px var(--panel)", pointerEvents: "none" }} />
-          <div style={{ position: "absolute", left: `${dot.xPct}%`, top: -4, transform: `translateX(${dot.xPct > 60 ? "-106%" : "6%"})`, background: "var(--panel-2)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 9px", fontSize: 12, whiteSpace: "nowrap", pointerEvents: "none", zIndex: 2 }}>
-            <span className="muted">{fmtDate(points[hi!].date)}</span> · <b>{egp(values[hi!])}</b>
-          </div>
-        </>
-      ) : null}
-    </div>
-  );
-}
+import { PriceChart } from "@/components/PriceChart";
+import type { HoldingRow } from "@/lib/metrics";
 
 export function HoldingsTable({ holdings }: { holdings: HoldingRow[] }) {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <div className="panel">
-      <div className="panel-head">
-        Holdings
-        <span className="hint">{holdings.length === 0 ? "" : "Click a row for detail · "}{holdings.length} position{holdings.length === 1 ? "" : "s"}</span>
-      </div>
+      <div className="panel-head">Holdings <span className="hint">{holdings.length === 0 ? "" : "Click a row for detail · "}{holdings.length} position{holdings.length === 1 ? "" : "s"}</span></div>
       {holdings.length === 0 ? (
         <div className="empty">No holdings yet. Load demo data or add a transaction.</div>
       ) : (
         <div className="overflow-x">
           <table>
-            <thead>
-              <tr>
-                <th>Ticker</th><th>Qty</th><th>Avg cost</th><th>Last close</th>
-                <th>Mkt value</th><th>Unrealized P&amp;L</th><th>Day</th>
-              </tr>
-            </thead>
-            <tbody>
-              {holdings.map((h) => (
-                <RowGroup key={h.ticker} h={h} isOpen={open === h.ticker} onToggle={() => setOpen(open === h.ticker ? null : h.ticker)} />
-              ))}
-            </tbody>
+            <thead><tr><th>Ticker</th><th>Qty</th><th>Avg cost</th><th>Last close</th><th>Mkt value</th><th>Unrealized P&amp;L</th><th>Day</th></tr></thead>
+            <tbody>{holdings.map((h) => <RowGroup key={h.ticker} h={h} isOpen={open === h.ticker} onToggle={() => setOpen(open === h.ticker ? null : h.ticker)} />)}</tbody>
           </table>
         </div>
       )}
@@ -124,42 +26,20 @@ export function HoldingsTable({ holdings }: { holdings: HoldingRow[] }) {
 function RowGroup({ h, isOpen, onToggle }: { h: HoldingRow; isOpen: boolean; onToggle: () => void }) {
   const pnlCls = h.unrealizedPnl === null ? "" : h.unrealizedPnl > 0 ? "gain" : h.unrealizedPnl < 0 ? "loss" : "";
   const dayCls = h.dayChangePct === null ? "muted" : h.dayChangePct > 0 ? "gain" : h.dayChangePct < 0 ? "loss" : "";
-
-  const full = h.spark;
-  const [win, setWin] = useState<[number, number] | null>(null); // absolute [start,end] into full; null = Max
-  const s = win ? win[0] : 0;
-  const e = win ? win[1] : full.length - 1;
-  const pts = full.slice(s, e + 1);
-  const first = pts[0]?.close;
-  const lastC = pts[pts.length - 1]?.close;
-  const chg = pts.length >= 2 && first > 0 ? (lastC - first) / first : null;
-
-  const isFull = !win || (win[0] === 0 && win[1] === full.length - 1);
-  const presetActive = (days: number | null) =>
-    days === null ? isFull : !!win && win[1] === full.length - 1 && win[0] === Math.max(0, full.length - days);
-  const setPreset = (days: number | null) =>
-    setWin(days === null ? null : [Math.max(0, full.length - days), full.length - 1]);
-
   return (
     <>
       <tr onClick={onToggle} style={{ cursor: "pointer" }}>
         <td>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--label)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isOpen ? "rotate(90deg)" : "none", transition: "transform .15s" }}><path d="M9 6l6 6-6 6" /></svg>
-            <span>
-              {h.ticker}
-              {h.sector ? <div className="muted" style={{ fontWeight: 400, fontSize: 12 }}>{h.sector}</div> : null}
-            </span>
+            <span>{h.ticker}{h.sector ? <div className="muted" style={{ fontWeight: 400, fontSize: 12 }}>{h.sector}</div> : null}</span>
           </span>
         </td>
         <td>{h.qty.toLocaleString()}</td>
         <td>{egp(h.avgCost)}</td>
         <td>{egp(h.lastClose)}</td>
         <td>{egp(h.marketValue)}</td>
-        <td className={pnlCls}>
-          {egp(h.unrealizedPnl)}
-          {h.unrealizedPnlPct !== null ? <div style={{ fontSize: 12, fontWeight: 400 }} className={pnlCls}>{pct(h.unrealizedPnlPct)}</div> : null}
-        </td>
+        <td className={pnlCls}>{egp(h.unrealizedPnl)}{h.unrealizedPnlPct !== null ? <div style={{ fontSize: 12, fontWeight: 400 }} className={pnlCls}>{pct(h.unrealizedPnlPct)}</div> : null}</td>
         <td className={dayCls}>{h.dayChangePct === null ? "—" : pct(h.dayChangePct)}</td>
       </tr>
       {isOpen ? (
@@ -167,29 +47,8 @@ function RowGroup({ h, isOpen, onToggle }: { h: HoldingRow; isOpen: boolean; onT
           <td colSpan={7}>
             <div className="detail-grid">
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 12, flexWrap: "wrap" }}>
-                  <span className="muted" style={{ fontSize: 12 }}>Last {pts.length} day{pts.length === 1 ? "" : "s"}</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div className="rng">
-                      {RANGES.map(([label, days]) => (
-                        <button key={label} className={presetActive(days) ? "on" : ""} onClick={() => setPreset(days)}>{label}</button>
-                      ))}
-                    </div>
-                    {chg !== null ? <span className={chg >= 0 ? "gain" : "loss"} style={{ fontSize: 13, fontWeight: 600 }}>{pct(chg)}</span> : null}
-                  </div>
-                </div>
-                <AreaChart
-                  points={pts}
-                  up={(chg ?? 0) >= 0}
-                  id={h.ticker.replace(/\W/g, "")}
-                  onZoom={(ls, le) => setWin([s + ls, s + le])}
-                  onReset={() => setWin(null)}
-                />
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                  <span className="muted" style={{ fontSize: 12 }}>{pts.length >= 1 ? fmtDate(pts[0].date) : ""}</span>
-                  <span className="muted" style={{ fontSize: 12 }}>{isFull ? `Today · ${egp(h.lastClose)}` : `${fmtDate(pts[pts.length - 1].date)} · ${egp(lastC)}`}</span>
-                </div>
-                <div className="muted" style={{ fontSize: 11, marginTop: 4, opacity: 0.7 }}>Drag to zoom · double-click to reset</div>
+                <PriceChart points={h.spark} id={h.ticker.replace(/\W/g, "")} />
+                <a href={`/ticker/${encodeURIComponent(h.ticker)}`} className="btn" style={{ marginTop: 12 }}>View details →</a>
               </div>
               <div>
                 <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>Transaction history</div>
