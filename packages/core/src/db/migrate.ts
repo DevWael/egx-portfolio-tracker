@@ -1,11 +1,6 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import type { DB } from "./connection.js";
-
-const here = dirname(fileURLToPath(import.meta.url));
+import { SCHEMA_SQL } from "./schema.js";
 
 export function migrate(db: DB): void {
-  const sql = readFileSync(join(here, "schema.sql"), "utf8");
-  db.exec(sql);
+  db.exec(SCHEMA_SQL);
 }

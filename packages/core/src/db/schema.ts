@@ -1,3 +1,4 @@
+export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS securities (
   ticker   TEXT PRIMARY KEY,
   name     TEXT NOT NULL,
@@ -43,3 +44,4 @@ CREATE TABLE IF NOT EXISTS settings (
   key   TEXT PRIMARY KEY,
   value TEXT
 );
+`;
