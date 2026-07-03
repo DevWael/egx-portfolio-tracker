@@ -51,6 +51,16 @@ pnpm --filter @egx/core test        # run the core test suite
 pnpm --filter @egx/core typecheck   # type-check
 ```
 
+### See it work (no API key, no network)
+
+```bash
+pnpm --filter @egx/core demo
+```
+
+Seeds a sample portfolio (COMI, HRHO, SWDY, FWRY + a closed EAST round-trip), "fetches" end-of-day prices through a stubbed EODHD client, and prints the portfolio summary, realized/unrealized P&L, triggered alerts, and daily digest — exactly as the real engine computes them. This is the fastest way to see the core in action; the interactive surfaces (MCP server, web dashboard) come in Plans 2 & 3.
+
+### Live prices
+
 You'll need an [EODHD API key](https://eodhd.com) (paid plan recommended — the free tier is 20 calls/day). Set it in `.env`:
 
 ```
