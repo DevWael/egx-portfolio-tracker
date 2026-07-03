@@ -48,4 +48,22 @@ describe("computeStats", () => {
     expect(s.volatilityAnnual).toBeNull();
     expect(s.avgVolume).toBeNull();
   });
+  it("computes YTD from the previous year's last close", () => {
+    const bars = [
+      { date: "2025-12-31", close: 100, volume: 1 },
+      { date: "2026-06-01", close: 120, volume: 1 },
+      { date: "2026-07-02", close: 150, volume: 1 },
+    ];
+    expect(computeStats(bars).returns.ytd).toBeCloseTo(0.5, 6); // (150-100)/100
+  });
+  it("52-week high/low uses only the last 252 bars", () => {
+    const bars = Array.from({ length: 260 }, (_, i) => ({
+      date: `2026-${String(1 + (i % 9)).padStart(2, "0")}-01`, // dates only need to be strings here
+      close: i < 8 ? 1000 : 200 + (i % 50),
+      volume: 1,
+    }));
+    const s = computeStats(bars);
+    expect(s.high52).toBeLessThan(1000); // the old 1000s are outside the 252 window
+    expect(s.high52).toBe(249);          // max of 200 + (i%50) within window
+  });
 });
