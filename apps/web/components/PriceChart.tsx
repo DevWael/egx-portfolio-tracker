@@ -8,7 +8,7 @@ function fmtDate(d: string): string {
   return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-const RANGES: [string, number | null][] = [["1M", 30], ["3M", 90], ["6M", 180], ["1Y", 365], ["Max", null]];
+const RANGES: [string, number | null][] = [["1W", 7], ["1M", 30], ["3M", 90], ["6M", 180], ["1Y", 365], ["Max", null]];
 
 function Area({ points, up, id, height, onZoom, onReset }: {
   points: SparkPoint[]; up: boolean; id: string; height: number;
