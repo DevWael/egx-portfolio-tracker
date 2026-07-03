@@ -1,1 +1,13 @@
-export const CORE_VERSION = "0.0.0";
+export * from "./types.js";
+export { openDb, type DB } from "./db/connection.js";
+export { migrate } from "./db/migrate.js";
+export * from "./repositories/securities.js";
+export * from "./repositories/transactions.js";
+export * from "./repositories/prices.js";
+export * from "./repositories/watchlist.js";
+export { deriveHoldings } from "./portfolio/holdings.js";
+export { valueHoldings, getPortfolioSummary } from "./portfolio/summary.js";
+export { evaluateAlerts } from "./alerts/evaluate.js";
+export { buildDigest, type Digest } from "./digest/build.js";
+export { EodhdClient, EodhdError, type EodhdOptions } from "./eodhd/client.js";
+export { syncPrices } from "./services/syncPrices.js";
