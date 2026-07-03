@@ -26,6 +26,9 @@ export function defineTool<S extends z.ZodRawShape>(t: {
 
 const TODAY = () => new Date().toISOString().slice(0, 10);
 const daysAgo = (n: number) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+// Guard: dates must be YYYY-MM-DD. The ledger sorts by tradedAt as a string, so a
+// non-ISO date would silently misorder buys/sells and corrupt weighted-avg cost / P&L.
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD");
 
 export const tools: McpTool[] = [
   defineTool({
@@ -79,7 +82,7 @@ export const tools: McpTool[] = [
   defineTool({
     name: "get_price_history",
     description: "Daily OHLCV price history for a ticker (EGP). Defaults to the last 365 days.",
-    inputSchema: { ticker: z.string(), from: z.string().optional(), to: z.string().optional() },
+    inputSchema: { ticker: z.string(), from: isoDate.optional(), to: isoDate.optional() },
     handler: (db, { ticker, from, to }) =>
       getPriceHistory(db, ticker, from ?? daysAgo(365), to ?? TODAY()).map((b) => ({
         date: b.date, open: toEgp(b.open), high: toEgp(b.high), low: toEgp(b.low), close: toEgp(b.close), volume: b.volume,
@@ -99,13 +102,17 @@ export const tools: McpTool[] = [
   }),
   defineTool({
     name: "get_triggered_alerts",
-    description: "Alerts crossed at the latest close (ticker, direction, target and the close that crossed it, in EGP).",
+    description: "Alerts that have crossed their target (queryable state, in EGP). Idempotent — returns all crossed alerts regardless of call order.",
     inputSchema: {},
-    handler: (db) =>
-      evaluateAlerts(db).map((t) => ({
-        ticker: t.alert.ticker, direction: t.alert.direction,
-        targetPrice: toEgp(t.alert.targetPrice), lastClose: toEgp(t.lastClose), lastCloseDate: t.lastCloseDate,
-      })),
+    handler: (db) => {
+      evaluateAlerts(db); // stamp any newly crossed alerts first
+      return listAlerts(db)
+        .filter((a) => a.triggeredAt !== null)
+        .map((a) => ({
+          ticker: a.ticker, direction: a.direction,
+          targetPrice: toEgp(a.targetPrice), triggeredAt: a.triggeredAt, note: a.note,
+        }));
+    },
   }),
   defineTool({
     name: "record_transaction",
@@ -116,7 +123,7 @@ export const tools: McpTool[] = [
       qty: z.number().int().positive(),
       price: z.number().nonnegative(),
       fee: z.number().nonnegative().optional(),
-      tradedAt: z.string().optional(),
+      tradedAt: isoDate.optional(),
       note: z.string().optional(),
     },
     handler: (db, a) => {
@@ -151,9 +158,13 @@ export const tools: McpTool[] = [
   }),
   defineTool({
     name: "upsert_security",
-    description: "Create or update a security's name and sector.",
+    description: "Create or update a security's name and sector. Omitting sector keeps the existing one.",
     inputSchema: { ticker: z.string(), name: z.string(), sector: z.string().optional() },
-    handler: (db, a) => { upsertSecurity(db, { ticker: a.ticker, name: a.name, sector: a.sector ?? null, currency: "EGP" }); return { ok: true }; },
+    handler: (db, a) => {
+      const existing = getSecurity(db, a.ticker);
+      upsertSecurity(db, { ticker: a.ticker, name: a.name, sector: a.sector ?? existing?.sector ?? null, currency: "EGP" });
+      return { ok: true };
+    },
   }),
   defineTool({
     name: "refresh_prices",
