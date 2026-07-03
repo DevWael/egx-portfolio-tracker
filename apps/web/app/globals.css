@@ -148,6 +148,10 @@ tbody tr:hover td { background: var(--panel-2); }
 .detail-row td, .detail-row:hover td { text-align: left; padding: 18px 16px; }
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
 @media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
+.rng { display: inline-flex; gap: 2px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; }
+.rng button { background: transparent; border: 0; color: var(--text-dim); font: inherit; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; cursor: pointer; }
+.rng button:hover { color: var(--text); }
+.rng button.on { background: var(--green-soft); color: var(--green-bright); }
 
 .gain { color: var(--green); }
 .loss { color: var(--red); }
