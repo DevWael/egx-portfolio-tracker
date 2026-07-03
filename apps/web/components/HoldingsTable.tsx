@@ -1,10 +1,19 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { egp, pct } from "@/lib/format";
-import type { HoldingRow } from "@/lib/metrics";
+import type { HoldingRow, SparkPoint } from "@/lib/metrics";
 
-function AreaChart({ values, up, id }: { values: number[]; up: boolean; id: string }) {
-  if (values.length < 2) return <div className="dim" style={{ fontSize: 13 }}>Not enough price history yet.</div>;
+function fmtDate(d: string): string {
+  const dt = new Date(d + "T00:00:00");
+  return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function AreaChart({ points, up, id }: { points: SparkPoint[]; up: boolean; id: string }) {
+  const [hi, setHi] = useState<number | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  if (points.length < 2) return <div className="dim" style={{ fontSize: 13 }}>Not enough price history yet.</div>;
+
+  const values = points.map((p) => p.close);
   const W = 640, H = 150, pad = 8;
   const min = Math.min(...values), max = Math.max(...values), span = max - min || 1;
   const X = (i: number) => pad + (i / (values.length - 1)) * (W - pad * 2);
@@ -13,17 +22,38 @@ function AreaChart({ values, up, id }: { values: number[]; up: boolean; id: stri
   const area = `M ${X(0).toFixed(1)},${H} L ` + values.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" L ") + ` L ${X(values.length - 1).toFixed(1)},${H} Z`;
   const color = up ? "var(--green)" : "var(--red)";
   const gid = `grad-${id}`;
+
+  function onMove(e: React.MouseEvent) {
+    const r = wrapRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    setHi(Math.round(f * (values.length - 1)));
+  }
+
+  const dot = hi != null ? { xPct: (X(hi) / W) * 100, yPct: (Y(values[hi]) / H) * 100 } : null;
+
   return (
-    <svg width="100%" height="150" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block" }}>
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill={`url(#${gid})`} />
-      <polyline points={line} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
+    <div ref={wrapRef} onMouseMove={onMove} onMouseLeave={() => setHi(null)} style={{ position: "relative", cursor: "crosshair" }}>
+      <svg width="100%" height="150" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block" }}>
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill={`url(#${gid})`} />
+        <polyline points={line} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
+        {hi != null ? <line x1={X(hi)} y1={0} x2={X(hi)} y2={H} stroke="var(--label)" strokeWidth="1" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" /> : null}
+      </svg>
+      {dot ? (
+        <>
+          <div style={{ position: "absolute", left: `${dot.xPct}%`, top: `${dot.yPct}%`, width: 9, height: 9, marginLeft: -4.5, marginTop: -4.5, borderRadius: "50%", background: color, boxShadow: "0 0 0 3px var(--panel)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", left: `${dot.xPct}%`, top: -4, transform: `translateX(${dot.xPct > 60 ? "-106%" : "6%"})`, background: "var(--panel-2)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 9px", fontSize: 12, whiteSpace: "nowrap", pointerEvents: "none", zIndex: 2 }}>
+            <span className="muted">{fmtDate(points[hi!].date)}</span> · <b>{egp(values[hi!])}</b>
+          </div>
+        </>
+      ) : null}
+    </div>
   );
 }
 
@@ -61,8 +91,8 @@ export function HoldingsTable({ holdings }: { holdings: HoldingRow[] }) {
 function RowGroup({ h, isOpen, onToggle }: { h: HoldingRow; isOpen: boolean; onToggle: () => void }) {
   const pnlCls = h.unrealizedPnl === null ? "" : h.unrealizedPnl > 0 ? "gain" : h.unrealizedPnl < 0 ? "loss" : "";
   const dayCls = h.dayChangePct === null ? "muted" : h.dayChangePct > 0 ? "gain" : h.dayChangePct < 0 ? "loss" : "";
-  const first = h.spark[0];
-  const lastC = h.spark[h.spark.length - 1];
+  const first = h.spark[0]?.close;
+  const lastC = h.spark[h.spark.length - 1]?.close;
   const chg = h.spark.length >= 2 && first > 0 ? (lastC - first) / first : null;
   return (
     <>
@@ -95,7 +125,7 @@ function RowGroup({ h, isOpen, onToggle }: { h: HoldingRow; isOpen: boolean; onT
                   <span className="muted" style={{ fontSize: 12 }}>Last {h.spark.length} day{h.spark.length === 1 ? "" : "s"}</span>
                   {chg !== null ? <span className={chg >= 0 ? "gain" : "loss"} style={{ fontSize: 13, fontWeight: 600 }}>{pct(chg)} · {h.spark.length}d</span> : null}
                 </div>
-                <AreaChart values={h.spark} up={(chg ?? 0) >= 0} id={h.ticker.replace(/\W/g, "")} />
+                <AreaChart points={h.spark} up={(chg ?? 0) >= 0} id={h.ticker.replace(/\W/g, "")} />
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
                   <span className="muted" style={{ fontSize: 12 }}>{h.spark.length} day{h.spark.length === 1 ? "" : "s"} ago</span>
                   <span className="muted" style={{ fontSize: 12 }}>Today · {egp(h.lastClose)}</span>

@@ -9,10 +9,15 @@ import {
 } from "@egx/core";
 import { getDb } from "./db.js";
 
+export interface SparkPoint {
+  date: string;
+  close: number; // piasters
+}
+
 export interface HoldingRow extends HoldingValuation {
   sector: string | null;
   dayChangePct: number | null; // fraction, vs previous close
-  spark: number[]; // recent closes (piasters), oldest -> newest
+  spark: SparkPoint[]; // recent closes (piasters), oldest -> newest
   txns: Transaction[]; // this ticker's transactions
 }
 
@@ -65,7 +70,7 @@ export function dashboard(): DashboardVM {
       ...h,
       sector: sectorByTicker.get(h.ticker) ?? null,
       dayChangePct,
-      spark: hist.slice(-365).map((b) => b.close), // show up to ~1 year of closes
+      spark: hist.slice(-365).map((b) => ({ date: b.date, close: b.close })), // up to ~1 year
       txns: listTransactions(db, h.ticker),
     };
   });
