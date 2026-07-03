@@ -1,23 +1,27 @@
-import { data } from "@/lib/data";
-import { SummaryBand } from "@/components/SummaryBand";
+import { dashboard } from "@/lib/metrics";
+import { StatCards } from "@/components/StatCards";
 import { HoldingsTable } from "@/components/HoldingsTable";
-import { DigestCard } from "@/components/DigestCard";
-import { DataControls } from "@/components/DataControls";
+import { AllocationDonut } from "@/components/AllocationDonut";
+import { TopMovers } from "@/components/TopMovers";
 
 export const dynamic = "force-dynamic";
 
 export default function Dashboard() {
-  const s = data.summary();
-  const d = data.digest();
+  const vm = dashboard();
   return (
     <div className="grid" style={{ gap: 20 }}>
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <h1>Portfolio {s.asOf ? <span className="dim" style={{ fontSize: 14 }}>· prices as of {s.asOf}</span> : null}</h1>
-        <DataControls />
+      <div>
+        <div className="page-title">Portfolio</div>
+        <div className="page-sub">Your EGX positions, valued at the last market close.</div>
       </div>
-      <SummaryBand s={s} />
-      <HoldingsTable holdings={s.holdings} />
-      <DigestCard d={d} />
+      <StatCards vm={vm} />
+      <div className="grid dash-grid">
+        <HoldingsTable holdings={vm.holdings} />
+        <div className="grid" style={{ gap: 18 }}>
+          <AllocationDonut allocation={vm.allocation} />
+          <TopMovers movers={vm.topMovers} />
+        </div>
+      </div>
     </div>
   );
 }

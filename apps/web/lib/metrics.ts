@@ -1,0 +1,100 @@
+import "server-only";
+import {
+  getPortfolioSummary,
+  listSecurities,
+  getPriceHistory,
+  type HoldingValuation,
+} from "@egx/core";
+import { getDb } from "./db.js";
+
+export interface HoldingRow extends HoldingValuation {
+  sector: string | null;
+  dayChangePct: number | null; // fraction, vs previous close
+}
+
+export interface SectorSlice {
+  sector: string;
+  value: number;
+  pct: number;
+  color: string;
+}
+
+export interface DashboardVM {
+  asOf: string | null;
+  totalMarketValue: number;
+  totalCostBasis: number;
+  totalUnrealizedPnl: number;
+  totalUnrealizedPnlPct: number;
+  totalRealizedPnl: number;
+  dayChange: number; // piasters
+  dayChangePct: number; // fraction vs previous market value
+  positions: number;
+  sectors: number;
+  holdings: HoldingRow[];
+  allocation: SectorSlice[];
+  topMovers: HoldingRow[];
+}
+
+const SECTOR_COLORS = ["#34d399", "#22c55e", "#4ade80", "#2dd4bf", "#a3e635", "#86efac", "#10b981"];
+
+export function dashboard(): DashboardVM {
+  const db = getDb();
+  const s = getPortfolioSummary(db);
+  const sectorByTicker = new Map(listSecurities(db).map((x) => [x.ticker, x.sector]));
+
+  let dayChange = 0;
+  let prevMarketValue = 0;
+
+  const holdings: HoldingRow[] = s.holdings.map((h) => {
+    const hist = getPriceHistory(db, h.ticker, "0000-01-01", "9999-12-31");
+    const last = hist[hist.length - 1];
+    const prev = hist.length >= 2 ? hist[hist.length - 2] : null;
+    let dayChangePct: number | null = null;
+    if (last && prev && prev.close > 0) {
+      dayChangePct = (last.close - prev.close) / prev.close;
+      dayChange += (last.close - prev.close) * h.qty;
+      prevMarketValue += prev.close * h.qty;
+    } else if (h.marketValue !== null) {
+      prevMarketValue += h.marketValue;
+    }
+    return { ...h, sector: sectorByTicker.get(h.ticker) ?? null, dayChangePct };
+  });
+
+  const bySector = new Map<string, number>();
+  for (const h of holdings) {
+    if (h.marketValue !== null) {
+      const key = h.sector ?? "Other";
+      bySector.set(key, (bySector.get(key) ?? 0) + h.marketValue);
+    }
+  }
+  const totalVal = s.totalMarketValue || 1;
+  const allocation: SectorSlice[] = [...bySector.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([sector, value], i) => ({
+      sector,
+      value,
+      pct: value / totalVal,
+      color: SECTOR_COLORS[i % SECTOR_COLORS.length],
+    }));
+
+  const topMovers = holdings
+    .filter((h) => h.dayChangePct !== null)
+    .sort((a, b) => Math.abs(b.dayChangePct!) - Math.abs(a.dayChangePct!))
+    .slice(0, 4);
+
+  return {
+    asOf: s.asOf,
+    totalMarketValue: s.totalMarketValue,
+    totalCostBasis: s.totalCostBasis,
+    totalUnrealizedPnl: s.totalUnrealizedPnl,
+    totalUnrealizedPnlPct: s.totalUnrealizedPnlPct,
+    totalRealizedPnl: s.totalRealizedPnl,
+    dayChange,
+    dayChangePct: prevMarketValue > 0 ? dayChange / prevMarketValue : 0,
+    positions: holdings.length,
+    sectors: new Set(holdings.map((h) => h.sector ?? "Other")).size,
+    holdings,
+    allocation,
+    topMovers,
+  };
+}
