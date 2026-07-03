@@ -6,7 +6,9 @@ interface Acc {
   realizedPnl: number; // integer piasters
 }
 
-export function deriveHoldings(transactions: Transaction[]): Holding[] {
+export function deriveHoldingsWithRealized(
+  transactions: Transaction[]
+): { holdings: Holding[]; totalRealizedPnl: number } {
   const sorted = [...transactions].sort(
     (a, b) => (a.tradedAt < b.tradedAt ? -1 : a.tradedAt > b.tradedAt ? 1 : a.id - b.id)
   );
@@ -32,7 +34,9 @@ export function deriveHoldings(transactions: Transaction[]): Holding[] {
   }
 
   const holdings: Holding[] = [];
+  let totalRealizedPnl = 0;
   for (const [ticker, a] of acc) {
+    totalRealizedPnl += a.realizedPnl;
     if (a.qty > 0) {
       holdings.push({
         ticker,
@@ -43,5 +47,9 @@ export function deriveHoldings(transactions: Transaction[]): Holding[] {
       });
     }
   }
-  return holdings.sort((x, y) => (x.ticker < y.ticker ? -1 : 1));
+  return { holdings: holdings.sort((x, y) => (x.ticker < y.ticker ? -1 : 1)), totalRealizedPnl };
+}
+
+export function deriveHoldings(transactions: Transaction[]): Holding[] {
+  return deriveHoldingsWithRealized(transactions).holdings;
 }

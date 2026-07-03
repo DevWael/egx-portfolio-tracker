@@ -1,6 +1,6 @@
 import type { DB } from "../db/connection.js";
 import type { Holding, HoldingValuation, PortfolioSummary } from "../types.js";
-import { deriveHoldings } from "./holdings.js";
+import { deriveHoldingsWithRealized } from "./holdings.js";
 import { listTransactions } from "../repositories/transactions.js";
 import { getLatestPrice, getLatestPriceDate } from "../repositories/prices.js";
 
@@ -25,12 +25,12 @@ export function valueHoldings(db: DB, holdings: Holding[]): HoldingValuation[] {
 }
 
 export function getPortfolioSummary(db: DB): PortfolioSummary {
-  const holdings = valueHoldings(db, deriveHoldings(listTransactions(db)));
+  const derived = deriveHoldingsWithRealized(listTransactions(db));
+  const holdings = valueHoldings(db, derived.holdings);
   let totalMarketValue = 0;
   let totalCostBasis = 0;
-  let totalRealizedPnl = 0;
+  const totalRealizedPnl = derived.totalRealizedPnl;
   for (const h of holdings) {
-    totalRealizedPnl += h.realizedPnl;
     if (h.marketValue !== null) {
       totalMarketValue += h.marketValue;
       totalCostBasis += h.costBasis;

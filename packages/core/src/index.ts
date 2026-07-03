@@ -5,7 +5,7 @@ export * from "./repositories/securities.js";
 export * from "./repositories/transactions.js";
 export * from "./repositories/prices.js";
 export * from "./repositories/watchlist.js";
-export { deriveHoldings } from "./portfolio/holdings.js";
+export { deriveHoldings, deriveHoldingsWithRealized } from "./portfolio/holdings.js";
 export { valueHoldings, getPortfolioSummary } from "./portfolio/summary.js";
 export { evaluateAlerts } from "./alerts/evaluate.js";
 export { buildDigest, type Digest } from "./digest/build.js";

@@ -52,4 +52,20 @@ describe("valuation + summary", () => {
     expect(s.holdings).toEqual([]);
     expect(s.asOf).toBeNull();
   });
+
+  it("counts realized pnl from a fully-closed position", () => {
+    addTransaction(db, { ticker: "COMI.EGX", side: "buy", qty: 100, price: 1000, tradedAt: "2026-06-01" });
+    addTransaction(db, { ticker: "COMI.EGX", side: "sell", qty: 100, price: 1500, tradedAt: "2026-06-02" });
+    const s = getPortfolioSummary(db);
+    expect(s.holdings).toEqual([]);
+    expect(s.totalRealizedPnl).toBe(50000);
+  });
+
+  it("counts realized pnl from a partial sell alongside the still-open holding", () => {
+    addTransaction(db, { ticker: "COMI.EGX", side: "buy", qty: 200, price: 1000, tradedAt: "2026-06-01" });
+    addTransaction(db, { ticker: "COMI.EGX", side: "sell", qty: 50, price: 1500, tradedAt: "2026-06-02" });
+    const s = getPortfolioSummary(db);
+    expect(s.totalRealizedPnl).toBe(25000);
+    expect(s.holdings.map((h) => h.ticker)).toEqual(["COMI.EGX"]);
+  });
 });
