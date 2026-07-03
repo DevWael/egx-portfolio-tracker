@@ -13,6 +13,9 @@ importers:
       '@egx/core':
         specifier: workspace:*
         version: link:../../packages/core
+      better-sqlite3:
+        specifier: ^11.0.0
+        version: 11.10.0
       next:
         specifier: ^16.0.0
         version: 16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
