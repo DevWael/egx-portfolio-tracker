@@ -16,7 +16,7 @@ export interface EodhdOptions {
 }
 
 interface EodRow { date: string; open: number; high: number; low: number; close: number; volume: number; }
-interface SearchRow { Code: string; Exchange: string; Name: string; }
+interface SearchRow { Code: string; Exchange?: string; Name: string; }
 
 const toPiasters = (v: number): number => Math.round(v * 100);
 
@@ -47,7 +47,7 @@ export class EodhdClient {
   }
 
   async getEod(ticker: string, from: string, to: string): Promise<PriceBar[]> {
-    const url = `${this.baseUrl}/eod/${encodeURIComponent(ticker)}?api_token=${this.apiKey}&fmt=json&from=${from}&to=${to}`;
+    const url = `${this.baseUrl}/eod/${encodeURIComponent(ticker)}?api_token=${encodeURIComponent(this.apiKey)}&fmt=json&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
     const json = await this.getJson(url);
     if (!Array.isArray(json)) {
       throw new EodhdError(0, "EODHD returned unexpected EOD response shape");
@@ -66,14 +66,17 @@ export class EodhdClient {
   }
 
   async search(query: string): Promise<{ ticker: string; name: string }[]> {
-    const url = `${this.baseUrl}/search/${encodeURIComponent(query)}?api_token=${this.apiKey}&fmt=json`;
+    const url = `${this.baseUrl}/search/${encodeURIComponent(query)}?api_token=${encodeURIComponent(this.apiKey)}&fmt=json`;
     const json = await this.getJson(url);
     if (!Array.isArray(json)) {
       throw new EodhdError(0, "EODHD returned unexpected search response shape");
     }
     const rows = json as SearchRow[];
+    // EODHD's search "Exchange" field carries the exchange code that forms the
+    // symbol (e.g. "EGX" -> COMI.EGX). Match case-insensitively, and leave Code
+    // untouched if it already includes an exchange suffix.
     return rows
-      .filter((r) => r.Exchange === "EGX")
-      .map((r) => ({ ticker: `${r.Code}.EGX`, name: r.Name }));
+      .filter((r) => (r.Exchange ?? "").toUpperCase() === "EGX")
+      .map((r) => ({ ticker: r.Code.includes(".") ? r.Code : `${r.Code}.EGX`, name: r.Name }));
   }
 }
