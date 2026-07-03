@@ -38,4 +38,17 @@ describe("EodhdClient", () => {
     await expect(client.getEod("COMI.EGX", "2026-06-01", "2026-06-02")).rejects.toBeInstanceOf(EodhdError);
     await expect(client.getEod("COMI.EGX", "2026-06-01", "2026-06-02")).rejects.toMatchObject({ status: 402 });
   });
+
+  it("throws EodhdError on network failure", async () => {
+    const fetchImpl = (async () => {
+      throw new Error("getaddrinfo ENOTFOUND eodhd.com");
+    }) as unknown as typeof fetch;
+    const client = new EodhdClient({ apiKey: "k", fetchImpl });
+    await expect(client.getEod("COMI.EGX", "2026-06-01", "2026-06-02")).rejects.toBeInstanceOf(EodhdError);
+  });
+
+  it("throws EodhdError when a 200 body is not an array", async () => {
+    const client = new EodhdClient({ apiKey: "k", fetchImpl: fakeFetch(200, { error: "not a list" }) });
+    await expect(client.getEod("COMI.EGX", "2026-06-01", "2026-06-02")).rejects.toBeInstanceOf(EodhdError);
+  });
 });

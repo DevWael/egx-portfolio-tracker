@@ -32,14 +32,27 @@ export class EodhdClient {
   }
 
   private async getJson(url: string): Promise<unknown> {
-    const res = await this.fetchImpl(url);
+    let res: Response;
+    try {
+      res = await this.fetchImpl(url);
+    } catch (e) {
+      throw new EodhdError(0, `EODHD network error: ${(e as Error).message}`);
+    }
     if (!res.ok) throw new EodhdError(res.status, `EODHD request failed: ${res.status}`);
-    return res.json();
+    try {
+      return await res.json();
+    } catch {
+      throw new EodhdError(res.status, "EODHD returned invalid JSON");
+    }
   }
 
   async getEod(ticker: string, from: string, to: string): Promise<PriceBar[]> {
     const url = `${this.baseUrl}/eod/${encodeURIComponent(ticker)}?api_token=${this.apiKey}&fmt=json&from=${from}&to=${to}`;
-    const rows = (await this.getJson(url)) as EodRow[];
+    const json = await this.getJson(url);
+    if (!Array.isArray(json)) {
+      throw new EodhdError(0, "EODHD returned unexpected EOD response shape");
+    }
+    const rows = json as EodRow[];
     return rows.map((r) => ({
       ticker,
       date: r.date,
@@ -54,7 +67,11 @@ export class EodhdClient {
 
   async search(query: string): Promise<{ ticker: string; name: string }[]> {
     const url = `${this.baseUrl}/search/${encodeURIComponent(query)}?api_token=${this.apiKey}&fmt=json`;
-    const rows = (await this.getJson(url)) as SearchRow[];
+    const json = await this.getJson(url);
+    if (!Array.isArray(json)) {
+      throw new EodhdError(0, "EODHD returned unexpected search response shape");
+    }
+    const rows = json as SearchRow[];
     return rows
       .filter((r) => r.Exchange === "EGX")
       .map((r) => ({ ticker: `${r.Code}.EGX`, name: r.Name }));
