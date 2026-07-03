@@ -66,7 +66,7 @@ function Area({ points, up, id, height, onZoom, onReset }: {
   );
 }
 
-export function PriceChart({ points, id, height = 150 }: { points: SparkPoint[]; id: string; height?: number }) {
+export function PriceChart({ points, id, height = 150, onPeriodChange }: { points: SparkPoint[]; id: string; height?: number; onPeriodChange?: (days: number | null) => void }) {
   const [win, setWin] = useState<[number, number] | null>(null);
   const s = win ? win[0] : 0;
   const e = win ? win[1] : points.length - 1;
@@ -76,7 +76,7 @@ export function PriceChart({ points, id, height = 150 }: { points: SparkPoint[];
   const chg = pts.length >= 2 && first > 0 ? (lastC - first) / first : null;
   const isFull = !win || (win[0] === 0 && win[1] === points.length - 1);
   const presetActive = (days: number | null) => days === null ? isFull : !!win && win[1] === points.length - 1 && win[0] === Math.max(0, points.length - days);
-  const setPreset = (days: number | null) => setWin(days === null ? null : [Math.max(0, points.length - days), points.length - 1]);
+  const setPreset = (days: number | null) => { setWin(days === null ? null : [Math.max(0, points.length - days), points.length - 1]); onPeriodChange?.(days); };
 
   return (
     <div>
