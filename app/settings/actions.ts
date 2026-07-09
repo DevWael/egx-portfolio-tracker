@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { updateSettings, type Settings } from "../../lib/core/index.js";
 
 export async function saveSettings(formData: FormData) {
@@ -10,4 +11,5 @@ export async function saveSettings(formData: FormData) {
     dateFormat: formData.get("dateFormat") as Settings["dateFormat"],
   });
   revalidatePath("/", "layout");
+  redirect("/settings?saved=1");
 }

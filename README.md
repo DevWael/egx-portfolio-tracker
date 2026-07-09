@@ -7,7 +7,7 @@ A personal, single-user tool to track equity positions on the **Egyptian Exchang
 ## Status
 
 Single Next.js app — dashboard, per-ticker pages, and an MCP server (over HTTP) all served from
-one process. ✅ **Complete** — 82 tests.
+one process. ✅ **Complete** — 109 tests.
 
 The EODHD client is verified end-to-end against **live EGX data** (real historical daily closes for `.EGX` tickers).
 
@@ -22,6 +22,7 @@ The EODHD client is verified end-to-end against **live EGX data** (real historic
 - **Transactions** — add/delete buys & sells (holdings and P&L are derived from these).
 - **Watchlist** — price-target alerts (above/below), auto-marked "crossed" at the latest close.
 - **Load demo** (confirms first) and **Refresh prices** (live EODHD when a key is set).
+- **Data menu** — back up now, restore the latest backup (confirms first), export the raw SQLite file as a download.
 - **Settings** (`/settings`) — theme, accent color, default ticker chart range, date format.
 
 ## Architecture
@@ -30,7 +31,7 @@ Single Next.js app (App Router, React 19) at the repo root. No workspace, no sep
 the dashboard and the MCP server are two entry points into the same code, run by the same process.
 
 ```
-app/                 routes: / · /transactions · /watchlist · /digest · /ticker/[symbol]
+app/                 routes: / · /transactions · /watchlist · /digest · /ticker/[symbol] · /settings · /export
   api/mcp/route.ts   MCP server exposed over HTTP (Streamable HTTP, stateless)
 components/          PriceChart, HoldingsTable, TickerChartStats, StatCards, …
 lib/
@@ -42,8 +43,9 @@ lib/
     digest/          daily summary (value, alerts, top movers)
     eodhd/           EODHD API client (injected fetch; live-verified)
     services/        price-sync
+    settings/        file-backed settings (settings.json) — shared by web, MCP, and the CLI
   mcp/               tools (read+write over lib/core), money (EGP↔piasters), server (McpServer)
-  settings/          file-backed settings (data/settings.json) — shared by web, MCP, and the CLI
+  cli/               CLI dispatch/parsing over the same MCP tool definitions
   db.ts, data.ts, metrics.ts, stats.ts, ticker.ts, format.ts, backup.ts   web-side data layer
 test/                core/, mcp/, cli/, plus the web-level unit tests
 docs/                design specs, implementation plans, UI brief + mockup
@@ -57,7 +59,8 @@ docs/                design specs, implementation plans, UI brief + mockup
 - **Graceful degradation.** A failed price fetch never blocks the app; it falls back to the last stored close.
 - **Server-only DB access.** `better-sqlite3` runs only on the server; the app builds on webpack (Turbopack can't resolve this codebase's `.js`→`.ts` import convention).
 - **MCP over HTTP, stateless.** The MCP endpoint (`app/api/mcp/route.ts`) builds a fresh `McpServer` + transport per request rather than a shared instance — required by the SDK for its stateless transport, and it sidesteps any risk of concurrent requests cross-wiring responses. No auth: the app is local-only.
-- **Settings are file-backed, not in the DB.** `data/settings.json` (git-ignored, override with `EGX_SETTINGS_PATH`) holds personal preferences — theme, accent color, etc. — shared identically by the dashboard, MCP, and the CLI. Never secrets: `EODHD_API_KEY` stays an environment variable.
+- **Settings are file-backed, not in the DB.** `settings.json` at the repo root (git-ignored, override with `EGX_SETTINGS_PATH`) holds personal preferences — theme, accent color, etc. — shared identically by the dashboard, MCP, and the CLI. Never secrets: `EODHD_API_KEY` stays an environment variable.
+- **Sector allocation colors are a validated categorical palette** — distinct hues in a fixed order (not shades of one hue), checked for colorblind-safe separation and contrast in both themes, rather than eyeballed.
 
 ## Tech stack
 
@@ -129,13 +132,17 @@ CLI dispatches to the same tool definitions rather than reimplementing anything.
 `/settings` — theme, accent color, default ticker chart range, and date format. Shared by the
 dashboard, MCP (`get_settings`/`update_settings`), and the CLI (`egx settings`/`egx set-settings`):
 change a setting from any one of the three, and the other two see it immediately, since all three
-read and write the same `data/settings.json` file. Never holds secrets — `EODHD_API_KEY` stays an
-environment variable.
+read and write the same `settings.json` (repo root, git-ignored, override with `EGX_SETTINGS_PATH`).
+Never holds secrets — `EODHD_API_KEY` stays an environment variable.
+
+Accent color drives the primary button, the active sidebar link, and input focus rings — text
+color on the primary button adapts automatically (light or dark) so it stays readable no matter
+how dark or light the chosen accent is. Saving shows a toast confirmation that fades out on its own.
 
 ### Tests & core demo
 
 ```bash
-pnpm test                           # 108 tests
+pnpm test                           # 109 tests
 pnpm typecheck
 pnpm demo                           # terminal demo of the engine (no key/network)
 ```

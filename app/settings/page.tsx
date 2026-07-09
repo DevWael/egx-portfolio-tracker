@@ -3,15 +3,17 @@ import { saveSettings } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const s = readSettings();
+  const { saved } = await searchParams;
   return (
     <div className="grid" style={{ gap: 20 }}>
       <div>
         <div className="page-title">Settings</div>
         <div className="page-sub">Personal preferences — shared by the dashboard, MCP, and the CLI.</div>
       </div>
-      <form action={saveSettings} className="panel panel-pad formcard">
+      {saved ? <div className="toast">✓ Settings saved</div> : null}
+      <form action={saveSettings} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 360 }}>
         <label className="field">
           Theme
           <select name="theme" defaultValue={s.theme}>

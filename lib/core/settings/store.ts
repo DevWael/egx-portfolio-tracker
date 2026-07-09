@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { SettingsSchema, DEFAULT_SETTINGS, type Settings } from "./schema.js";
 
 function settingsPath(): string {
-  return process.env.EGX_SETTINGS_PATH ?? join(process.cwd(), "data", "settings.json");
+  return process.env.EGX_SETTINGS_PATH ?? join(process.cwd(), "settings.json");
 }
 
 export function readSettings(): Settings {

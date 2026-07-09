@@ -31,3 +31,12 @@ export function formatDate(dateStr: string, format: DateFormat): string {
   if (format === "en-US") return dt.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
   return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
+
+/** #rrggbb -> readable text color for a background of that color (perceived brightness). */
+export function accentForeground(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 140 ? "#062018" : "#e8ebe9";
+}

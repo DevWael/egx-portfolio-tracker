@@ -44,7 +44,12 @@ export interface DashboardVM {
   topMovers: HoldingRow[];
 }
 
-const SECTOR_COLORS = ["#34d399", "#22c55e", "#4ade80", "#2dd4bf", "#a3e635", "#86efac", "#10b981"];
+// Distinct hues in fixed order (not shades of one hue) so sectors are told apart at a glance —
+// defined as CSS vars in globals.css so each mode uses its own validated (CVD-checked) steps.
+const SECTOR_COLORS = [
+  "var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)",
+  "var(--series-5)", "var(--series-6)", "var(--series-7)", "var(--series-8)",
+];
 
 export function dashboard(): DashboardVM {
   const db = getDb();

@@ -3,6 +3,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { data } from "@/lib/data";
+import { accentForeground } from "@/lib/format";
 import { readSettings } from "../lib/core/index.js";
 
 export const metadata: Metadata = { title: "EGX Folio", description: "EGX portfolio tracker" };
@@ -16,7 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       className={settings.theme === "light" ? "light" : undefined}
-      style={{ "--accent": settings.accentColor } as React.CSSProperties}
+      style={{
+        "--accent": settings.accentColor,
+        "--accent-fg": accentForeground(settings.accentColor),
+      } as React.CSSProperties}
       suppressHydrationWarning
     >
       <body suppressHydrationWarning>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { egp, pct, toPiasters, formatDate } from "../lib/format.js";
+import { egp, pct, toPiasters, formatDate, accentForeground } from "../lib/format.js";
 
 describe("format", () => {
   it("formats piasters as EGP", () => {
@@ -21,5 +21,10 @@ describe("format", () => {
     expect(formatDate("2026-07-09", "iso")).toBe("2026-07-09");
     expect(formatDate("2026-07-09", "en-GB")).toBe("09 Jul 2026");
     expect(formatDate("2026-07-09", "en-US")).toBe("Jul 09, 2026");
+  });
+  it("picks a readable text color for a given accent background", () => {
+    expect(accentForeground("#34d399")).toBe("#062018"); // bright green -> dark text
+    expect(accentForeground("#0a0c0b")).toBe("#e8ebe9"); // near-black -> light text
+    expect(accentForeground("#a3006e")).toBe("#e8ebe9"); // dark magenta -> light text
   });
 });
