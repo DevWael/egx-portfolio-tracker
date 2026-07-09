@@ -22,7 +22,7 @@ The EODHD client is verified end-to-end against **live EGX data** (real historic
 - **Transactions** — add/delete buys & sells (holdings and P&L are derived from these).
 - **Watchlist** — price-target alerts (above/below), auto-marked "crossed" at the latest close.
 - **Load demo** (confirms first) and **Refresh prices** (live EODHD when a key is set).
-- Dark/light theme.
+- **Settings** (`/settings`) — theme, accent color, default ticker chart range, date format.
 
 ## Architecture
 
@@ -43,8 +43,9 @@ lib/
     eodhd/           EODHD API client (injected fetch; live-verified)
     services/        price-sync
   mcp/               tools (read+write over lib/core), money (EGP↔piasters), server (McpServer)
+  settings/          file-backed settings (data/settings.json) — shared by web, MCP, and the CLI
   db.ts, data.ts, metrics.ts, stats.ts, ticker.ts, format.ts, backup.ts   web-side data layer
-test/                core/, mcp/, plus the web-level unit tests
+test/                core/, mcp/, cli/, plus the web-level unit tests
 docs/                design specs, implementation plans, UI brief + mockup
 ```
 
@@ -56,6 +57,7 @@ docs/                design specs, implementation plans, UI brief + mockup
 - **Graceful degradation.** A failed price fetch never blocks the app; it falls back to the last stored close.
 - **Server-only DB access.** `better-sqlite3` runs only on the server; the app builds on webpack (Turbopack can't resolve this codebase's `.js`→`.ts` import convention).
 - **MCP over HTTP, stateless.** The MCP endpoint (`app/api/mcp/route.ts`) builds a fresh `McpServer` + transport per request rather than a shared instance — required by the SDK for its stateless transport, and it sidesteps any risk of concurrent requests cross-wiring responses. No auth: the app is local-only.
+- **Settings are file-backed, not in the DB.** `data/settings.json` (git-ignored, override with `EGX_SETTINGS_PATH`) holds personal preferences — theme, accent color, etc. — shared identically by the dashboard, MCP, and the CLI. Never secrets: `EODHD_API_KEY` stays an environment variable.
 
 ## Tech stack
 
@@ -116,22 +118,32 @@ pnpm egx record-transaction --ticker COMI.EGX --side buy --qty 100 --price 84.15
 | `set-alert` | `--ticker --target-price --direction [--note]` |
 | `upsert-security` | `--ticker --name [--sector]` |
 | `refresh-prices` | `[--tickers a,b,c]` |
+| `settings` | — |
+| `set-settings` | `[--theme] [--accent-color] [--default-price-history-range] [--date-format]` |
 
 Behavior matches the MCP tools exactly — same validation, same EGP↔piaster conversion — since the
 CLI dispatches to the same tool definitions rather than reimplementing anything.
 
+## Settings
+
+`/settings` — theme, accent color, default ticker chart range, and date format. Shared by the
+dashboard, MCP (`get_settings`/`update_settings`), and the CLI (`egx settings`/`egx set-settings`):
+change a setting from any one of the three, and the other two see it immediately, since all three
+read and write the same `data/settings.json` file. Never holds secrets — `EODHD_API_KEY` stays an
+environment variable.
+
 ### Tests & core demo
 
 ```bash
-pnpm test                           # 98 tests
+pnpm test                           # 108 tests
 pnpm typecheck
 pnpm demo                           # terminal demo of the engine (no key/network)
 ```
 
 ## Documentation
 
-- Specs: [core design](docs/superpowers/specs/2026-07-03-egx-portfolio-tracker-design.md) · [ticker page](docs/superpowers/specs/2026-07-03-ticker-page-design.md) · [MCP server](docs/superpowers/specs/2026-07-04-mcp-server-design.md) · [one-app architecture](docs/superpowers/specs/2026-07-09-one-app-architecture-design.md)
-- Plans: [core](docs/superpowers/plans/2026-07-03-egx-tracker-core.md) · [web](docs/superpowers/plans/2026-07-03-egx-tracker-web.md) · [ticker page](docs/superpowers/plans/2026-07-03-ticker-page.md) · [MCP server](docs/superpowers/plans/2026-07-04-mcp-server.md) · [one-app architecture](docs/superpowers/plans/2026-07-09-one-app-architecture.md)
+- Specs: [core design](docs/superpowers/specs/2026-07-03-egx-portfolio-tracker-design.md) · [ticker page](docs/superpowers/specs/2026-07-03-ticker-page-design.md) · [MCP server](docs/superpowers/specs/2026-07-04-mcp-server-design.md) · [one-app architecture](docs/superpowers/specs/2026-07-09-one-app-architecture-design.md) · [CLI](docs/superpowers/specs/2026-07-09-cli-design.md) · [settings API](docs/superpowers/specs/2026-07-09-settings-api-design.md)
+- Plans: [core](docs/superpowers/plans/2026-07-03-egx-tracker-core.md) · [web](docs/superpowers/plans/2026-07-03-egx-tracker-web.md) · [ticker page](docs/superpowers/plans/2026-07-03-ticker-page.md) · [MCP server](docs/superpowers/plans/2026-07-04-mcp-server.md) · [one-app architecture](docs/superpowers/plans/2026-07-09-one-app-architecture.md) · [CLI](docs/superpowers/plans/2026-07-09-cli-layer.md) · [settings API](docs/superpowers/plans/2026-07-09-settings-api.md)
 - UI: [design brief](docs/design/claude-design-brief.md) · [dashboard mockup](docs/design/mockups/egx-folio.html)
 
 ## Disclaimer
