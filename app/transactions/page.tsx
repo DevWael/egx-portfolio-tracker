@@ -13,15 +13,13 @@ export default function TransactionsPage() {
         <div className="page-sub">Your buy/sell ledger — holdings and P&amp;L are derived from these.</div>
       </div>
       <form action={createTransaction} className="panel panel-pad formcard">
-        <label className="field">Ticker<input name="ticker" placeholder="COMI.EGX" required /></label>
-        <label className="field">Name<input name="name" placeholder="Commercial International Bank" /></label>
-        <label className="field">Sector<input name="sector" placeholder="Banks" /></label>
+        <label className="field">Ticker<input name="ticker" placeholder="COMI" required /></label>
         <label className="field">Side<select name="side"><option value="buy">Buy</option><option value="sell">Sell</option></select></label>
         <label className="field">Qty<input name="qty" type="number" min="1" required /></label>
         <label className="field">Price (EGP)<input name="price" type="number" step="0.01" min="0" required /></label>
         <label className="field">Fee (EGP)<input name="fee" type="number" step="0.01" min="0" defaultValue="0" /></label>
         <label className="field">Date<input name="tradedAt" type="date" /></label>
-        <label className="field">Note<input name="note" /></label>
+        <label className="field field-wide">Note<input name="note" /></label>
         <button className="btn primary" type="submit">Add transaction</button>
       </form>
       <div className="panel">

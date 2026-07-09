@@ -1,16 +1,16 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { upsertSecurity, addTransaction, deleteTransaction } from "../../lib/core/index.js";
+import { getSecurity, upsertSecurity, addTransaction, deleteTransaction } from "../../lib/core/index.js";
 import { getDb } from "@/lib/db";
-import { toPiasters } from "@/lib/format";
+import { toPiasters, normalizeTicker } from "@/lib/format";
 
 export async function createTransaction(formData: FormData) {
   const db = getDb();
-  const ticker = String(formData.get("ticker") || "").trim().toUpperCase();
+  const ticker = normalizeTicker(String(formData.get("ticker") || ""));
   if (!ticker) return;
-  const name = String(formData.get("name") || "").trim() || ticker;
-  const sector = String(formData.get("sector") || "").trim() || null;
-  upsertSecurity(db, { ticker, name, sector, currency: "EGP" });
+  if (!getSecurity(db, ticker)) {
+    upsertSecurity(db, { ticker, name: ticker, sector: null, currency: "EGP" });
+  }
   addTransaction(db, {
     ticker,
     side: formData.get("side") === "sell" ? "sell" : "buy",

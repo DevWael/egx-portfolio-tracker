@@ -40,3 +40,9 @@ export function accentForeground(hex: string): string {
   const brightness = (r * 299 + g * 587 + b * 114) / 1000;
   return brightness > 140 ? "#062018" : "#e8ebe9";
 }
+
+/** Free-typed ticker -> canonical EGX symbol, e.g. "comi" -> "COMI.EGX". */
+export function normalizeTicker(raw: string): string {
+  const t = raw.trim().toUpperCase();
+  return t === "" || t.endsWith(".EGX") ? t : `${t}.EGX`;
+}

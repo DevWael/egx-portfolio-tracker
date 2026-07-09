@@ -14,7 +14,7 @@ export default function WatchlistPage() {
         <div className="page-sub">Price-target alerts, evaluated against the latest close.</div>
       </div>
       <form action={createAlert} className="panel panel-pad formcard">
-        <label className="field">Ticker<input name="ticker" placeholder="COMI.EGX" required /></label>
+        <label className="field">Ticker<input name="ticker" placeholder="COMI" required /></label>
         <label className="field">Direction<select name="direction"><option value="above">Above</option><option value="below">Below</option></select></label>
         <label className="field">Target (EGP)<input name="target" type="number" step="0.01" min="0" required /></label>
         <label className="field">Note<input name="note" /></label>

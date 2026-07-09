@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { egp, pct, toPiasters, formatDate, accentForeground } from "../lib/format.js";
+import { egp, pct, toPiasters, formatDate, accentForeground, normalizeTicker } from "../lib/format.js";
 
 describe("format", () => {
   it("formats piasters as EGP", () => {
@@ -26,5 +26,11 @@ describe("format", () => {
     expect(accentForeground("#34d399")).toBe("#062018"); // bright green -> dark text
     expect(accentForeground("#0a0c0b")).toBe("#e8ebe9"); // near-black -> light text
     expect(accentForeground("#a3006e")).toBe("#e8ebe9"); // dark magenta -> light text
+  });
+  it("normalizes a free-typed ticker to its canonical EGX symbol", () => {
+    expect(normalizeTicker("comi")).toBe("COMI.EGX");
+    expect(normalizeTicker("  Comi.egx  ")).toBe("COMI.EGX");
+    expect(normalizeTicker("SWDY.EGX")).toBe("SWDY.EGX");
+    expect(normalizeTicker("")).toBe("");
   });
 });
