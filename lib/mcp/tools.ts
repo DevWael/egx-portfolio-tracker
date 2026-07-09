@@ -5,6 +5,7 @@ import {
   listAlerts, evaluateAlerts,
   getSecurity, upsertSecurity, addTransaction, deleteTransaction, addAlert,
   EodhdClient, syncPrices,
+  readSettings, updateSettings,
 } from "../core/index.js";
 import { toEgp, toPiasters } from "./money.js";
 
@@ -183,5 +184,22 @@ export const tools: McpTool[] = [
       const stored = await syncPrices(db, new EodhdClient({ apiKey: key }), list, from, to);
       return { ok: true, stored, tickers: list };
     },
+  }),
+  defineTool({
+    name: "get_settings",
+    description: "Get the app's saved settings (theme, accent color, default price-history range, date format).",
+    inputSchema: {},
+    handler: () => readSettings(),
+  }),
+  defineTool({
+    name: "update_settings",
+    description: "Update one or more settings. Only the fields you pass are changed; others are left as-is.",
+    inputSchema: {
+      theme: z.enum(["dark", "light"]).optional(),
+      accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "must be a #rrggbb hex color").optional(),
+      defaultPriceHistoryRange: z.enum(["1W", "1M", "3M", "6M", "1Y", "max"]).optional(),
+      dateFormat: z.enum(["en-GB", "iso", "en-US"]).optional(),
+    },
+    handler: (_db, args) => ({ ok: true, settings: updateSettings(args) }),
   }),
 ];
