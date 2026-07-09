@@ -86,9 +86,15 @@ HTTP MCP client is ever found to require session negotiation, flipping to statef
 change in `route.ts`, not a redesign.
 
 **Wiring:** `lib/mcp/server.ts` builds the `McpServer` and registers tools from `lib/mcp/tools.ts`
-(unchanged from today, just relocated). `app/api/mcp/route.ts` holds a module-scope singleton of
-the transport + server (mirroring the `globalThis.__egxDb` singleton pattern already in `lib/db.ts`),
-and exports `POST`/`GET`/`DELETE` handlers that each call `transport.handleRequest(request)`.
+(unchanged from today, just relocated). `app/api/mcp/route.ts` exports a `POST` handler only (no
+`GET`/`DELETE` — this app never needs the server-initiated SSE push channel, and Next returns 405
+for unexported methods, which is correct here). Verified against the installed SDK source
+(`@modelcontextprotocol/sdk@1.29.0`): a stateless transport cannot be reused across requests — the
+SDK throws if you try — so the handler builds a *fresh* `McpServer` + `WebStandardStreamableHTTPServerTransport`
+per request rather than a module-scope singleton. This is cheap (registering 11 tool closures is
+microseconds) and avoids a real hazard a singleton would have: `McpServer` keeps one mutable
+transport reference set by `connect()`, so two concurrent requests sharing a server could cross-wire
+their responses.
 
 ## What survives unchanged
 
