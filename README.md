@@ -91,10 +91,39 @@ claude mcp add --transport http egx http://localhost:3000/api/mcp
 
 Set `EODHD_API_KEY` (for `refresh_prices`) and optionally `EGX_DB_PATH` in `.env.local` before starting the app. Then ask things like *"how's my portfolio?"*, *"record a buy of 100 COMI.EGX at 84.15"*, or *"any alerts crossed?"* — tools speak **EGP**. Available tools: `list_positions`, `get_portfolio_summary`, `list_transactions`, `get_price_history`, `list_watchlist`, `get_triggered_alerts`, `record_transaction`, `delete_transaction`, `set_alert`, `upsert_security`, `refresh_prices`.
 
+## CLI
+
+Same 11 tools, from a terminal — no chat, no running server required (it opens `data/egx.db`
+directly). Table output by default, `--json` on every command:
+
+```bash
+pnpm egx help
+pnpm egx list-positions
+pnpm egx summary --json
+pnpm egx record-transaction --ticker COMI.EGX --side buy --qty 100 --price 84.15
+```
+
+| Command | Flags |
+|---|---|
+| `list-positions` | — |
+| `summary` | — |
+| `transactions` | `[--ticker]` |
+| `price-history` | `--ticker [--from] [--to]` |
+| `watchlist` | — |
+| `alerts-triggered` | — |
+| `record-transaction` | `--ticker --side --qty --price [--fee] [--traded-at] [--note]` |
+| `delete-transaction` | `--id` |
+| `set-alert` | `--ticker --target-price --direction [--note]` |
+| `upsert-security` | `--ticker --name [--sector]` |
+| `refresh-prices` | `[--tickers a,b,c]` |
+
+Behavior matches the MCP tools exactly — same validation, same EGP↔piaster conversion — since the
+CLI dispatches to the same tool definitions rather than reimplementing anything.
+
 ### Tests & core demo
 
 ```bash
-pnpm test                           # 82 tests
+pnpm test                           # 98 tests
 pnpm typecheck
 pnpm demo                           # terminal demo of the engine (no key/network)
 ```

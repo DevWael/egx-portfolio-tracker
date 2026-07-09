@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
+  "bin": { "egx": "scripts/cli.ts" },
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
@@ -11,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "backup": "node scripts/backup.mjs",
-    "demo": "tsx scripts/demo.ts"
+    "demo": "tsx scripts/demo.ts",
+    "egx": "tsx scripts/cli.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
