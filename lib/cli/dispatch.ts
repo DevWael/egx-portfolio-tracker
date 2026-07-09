@@ -16,6 +16,8 @@ const COMMANDS: Record<string, string> = {
   "set-alert": "set_alert",
   "upsert-security": "upsert_security",
   "refresh-prices": "refresh_prices",
+  "settings": "get_settings",
+  "set-settings": "update_settings",
 };
 
 function helpText(): string {

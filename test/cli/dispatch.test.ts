@@ -1,11 +1,23 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { openDb, migrate, type DB } from "../../lib/core/index.js";
 import { runCli } from "../../lib/cli/dispatch.js";
 
 let db: DB;
+let dir: string;
+
 beforeEach(() => {
   db = openDb(":memory:");
   migrate(db);
+  dir = mkdtempSync(join(tmpdir(), "egx-settings-cli-"));
+  process.env.EGX_SETTINGS_PATH = join(dir, "settings.json");
+});
+
+afterEach(() => {
+  delete process.env.EGX_SETTINGS_PATH;
+  rmSync(dir, { recursive: true, force: true });
 });
 
 describe("runCli", () => {
@@ -44,5 +56,19 @@ describe("runCli", () => {
     expect(code).toBe(0);
     expect(output).toContain("list-positions");
     expect(output).toContain("record-transaction");
+    expect(output).toContain("settings");
+    expect(output).toContain("set-settings");
+  });
+
+  it("settings returns the current settings", async () => {
+    const { code, output } = await runCli(["settings"], db);
+    expect(code).toBe(0);
+    expect(output).toContain("theme: dark");
+  });
+
+  it("set-settings updates a field", async () => {
+    const { code, output } = await runCli(["set-settings", "--theme", "light"], db);
+    expect(code).toBe(0);
+    expect(output).toContain("ok: true");
   });
 });
