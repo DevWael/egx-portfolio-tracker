@@ -11,3 +11,12 @@ export { evaluateAlerts } from "./alerts/evaluate.js";
 export { buildDigest, type Digest } from "./digest/build.js";
 export { EodhdClient, EodhdError, type EodhdOptions } from "./eodhd/client.js";
 export { syncPrices } from "./services/syncPrices.js";
+export { readSettings, writeSettings, updateSettings } from "./settings/store.js";
+export {
+  SettingsSchema,
+  DEFAULT_SETTINGS,
+  RANGE_DAYS,
+  type Settings,
+  type PriceHistoryRange,
+  type DateFormat,
+} from "./settings/schema.js";
