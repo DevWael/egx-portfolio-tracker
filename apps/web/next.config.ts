@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
-  transpilePackages: ["@egx/core"],
   serverExternalPackages: ["better-sqlite3"],
   // Turbopack (Next's default bundler) can't resolve relative TS imports
   // written with a ".js" specifier (our ESM convention) back to their ".ts"

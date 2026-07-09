@@ -6,7 +6,7 @@ import {
   getPriceHistory,
   type HoldingValuation,
   type Transaction,
-} from "@egx/core";
+} from "./core/index.js";
 import { getDb } from "./db.js";
 
 export interface SparkPoint {

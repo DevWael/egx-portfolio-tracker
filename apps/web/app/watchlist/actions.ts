@@ -1,6 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { upsertSecurity, addAlert, setAlertActive, deleteAlert } from "@egx/core";
+import { upsertSecurity, addAlert, setAlertActive, deleteAlert } from "../../lib/core/index.js";
 import { getDb } from "@/lib/db";
 import { toPiasters } from "@/lib/format";
 

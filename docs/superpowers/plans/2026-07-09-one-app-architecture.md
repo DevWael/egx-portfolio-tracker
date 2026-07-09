@@ -106,6 +106,20 @@ grep -rn '\.\./src/\|@egx/core' apps/web/test/mcp/ || echo "clean"
 ```
 Expected: `clean`
 
+- [ ] **Step 6b: Fix `@egx/core` imports in the rest of `apps/web`**
+
+The MCP source/tests weren't the only consumers of `@egx/core` — `apps/web`'s own app/lib/component code imported it directly too. Fix each at its own relative depth:
+
+```bash
+sed -i '' 's#from "@egx/core"#from "../lib/core/index.js"#' apps/web/app/actions.ts
+sed -i '' 's#from "@egx/core"#from "../../lib/core/index.js"#' apps/web/app/transactions/actions.ts apps/web/app/watchlist/actions.ts
+sed -i '' 's#from "@egx/core"#from "./core/index.js"#' apps/web/lib/ticker.ts apps/web/lib/data.ts apps/web/lib/metrics.ts apps/web/lib/db.ts
+sed -i '' 's#from "@egx/core"#from "../lib/core/index.js"#' apps/web/components/TickerChartStats.tsx
+sed -i '' 's#@egx/core#lib/core#g' apps/web/scripts/demo.ts
+grep -rn '@egx/core' apps/web --include='*.ts' --include='*.tsx' || echo "clean"
+```
+Expected: `clean`. (`scripts/demo.ts`'s two matches are doc-comment mentions, not imports — the sed just keeps the prose accurate.)
+
 - [ ] **Step 7: Delete the now-empty source directories**
 
 ```bash
@@ -184,6 +198,27 @@ pnpm --filter @egx/web typecheck
 pnpm --filter @egx/web test
 ```
 Expected: typecheck passes with no errors; test run shows `apps/web`'s existing 11 tests plus the ~50 relocated core tests plus the ~15 relocated mcp tests, all passing (~76 total), zero references to `@egx/core` remaining anywhere in `apps/web`.
+
+**If `test/mcp/server.test.ts` fails with `"This module cannot be imported from a Client Component module..."`:**
+that's `server-only` (imported by `lib/db.ts`, now pulled in transitively by `lib/mcp/server.ts` → `getDb`).
+`server-only`'s package.json resolves to a no-op via the `"react-server"` export condition, which Next's
+webpack sets for server bundles but plain vitest doesn't. Fix by creating `apps/web/vitest.config.ts`:
+```ts
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  resolve: {
+    // "server-only" (imported by lib/db.ts) resolves via this export condition
+    // to a no-op under Next's webpack build; vitest needs the same condition
+    // set explicitly, or the package's default export (which throws) is used.
+    conditions: ["react-server"],
+  },
+});
+```
+Then re-run `pnpm --filter @egx/web test` — this is the intended, package-defined fix (not a workaround):
+it makes vitest resolve the same conditional export Next's bundler already does, rather than weakening
+`lib/db.ts`'s client/server boundary guard or duplicating a second unguarded DB module the way the old
+`apps/mcp/src/db.ts` did.
 
 - [ ] **Step 11: Commit**
 

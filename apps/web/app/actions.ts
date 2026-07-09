@@ -4,7 +4,7 @@ import {
   upsertSecurity, addTransaction, addAlert, upsertPrice,
   listTransactions, listAlerts,
   EodhdClient, syncPrices,
-} from "@egx/core";
+} from "../lib/core/index.js";
 import { getDb } from "@/lib/db";
 import { snapshot, restoreLatest } from "@/lib/backup";
 

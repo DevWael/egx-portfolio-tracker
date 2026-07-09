@@ -1,7 +1,7 @@
 import "server-only";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { openDb, migrate, type DB } from "@egx/core";
+import { openDb, migrate, type DB } from "./core/index.js";
 
 const dbPath = process.env.EGX_DB_PATH ?? join(process.cwd(), "data", "egx.db");
 

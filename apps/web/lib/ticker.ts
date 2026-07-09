@@ -1,5 +1,5 @@
 import "server-only";
-import { getSecurity, getPriceHistory, listTransactions, getPortfolioSummary, type HoldingValuation, type Transaction } from "@egx/core";
+import { getSecurity, getPriceHistory, listTransactions, getPortfolioSummary, type HoldingValuation, type Transaction } from "./core/index.js";
 import { getDb } from "./db.js";
 import type { StatBar } from "./stats.js";
 

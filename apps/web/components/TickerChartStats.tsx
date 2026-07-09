@@ -3,7 +3,7 @@ import { useState } from "react";
 import { egp, pct } from "@/lib/format";
 import { computeStats, type StatBar } from "@/lib/stats";
 import { PriceChart } from "@/components/PriceChart";
-import type { HoldingValuation } from "@egx/core";
+import type { HoldingValuation } from "../lib/core/index.js";
 
 const sign = (n: number | null) => (n === null ? "" : n > 0 ? "gain" : n < 0 ? "loss" : "");
 const rangeLabel = (p: number | null) => (p === 7 ? "1-week" : p === 30 ? "1-month" : p === 90 ? "3-month" : p === 180 ? "6-month" : p === 365 ? "52-week" : "All-time");

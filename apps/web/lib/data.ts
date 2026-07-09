@@ -6,7 +6,7 @@ import {
   listAlerts,
   evaluateAlerts,
   buildDigest,
-} from "@egx/core";
+} from "./core/index.js";
 import { getDb } from "./db.js";
 
 export const data = {
