@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { egp, pct, toPiasters } from "../lib/format.js";
+import { egp, pct, toPiasters, formatDate } from "../lib/format.js";
 
 describe("format", () => {
   it("formats piasters as EGP", () => {
@@ -16,5 +16,10 @@ describe("format", () => {
   it("converts EGP to integer piasters", () => {
     expect(toPiasters("72.40")).toBe(7240);
     expect(toPiasters(5.1)).toBe(510);
+  });
+  it("formats a date per the dateFormat setting", () => {
+    expect(formatDate("2026-07-09", "iso")).toBe("2026-07-09");
+    expect(formatDate("2026-07-09", "en-GB")).toBe("09 Jul 2026");
+    expect(formatDate("2026-07-09", "en-US")).toBe("Jul 09, 2026");
   });
 });

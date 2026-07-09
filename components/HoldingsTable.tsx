@@ -4,8 +4,11 @@ import Link from "next/link";
 import { egp, pct } from "@/lib/format";
 import { PriceChart } from "@/components/PriceChart";
 import type { HoldingRow } from "@/lib/metrics";
+import type { DateFormat } from "../lib/core/index.js";
 
-export function HoldingsTable({ holdings }: { holdings: HoldingRow[] }) {
+export function HoldingsTable({ holdings, dateFormat, defaultRangeDays }: {
+  holdings: HoldingRow[]; dateFormat: DateFormat; defaultRangeDays: number | null;
+}) {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <div className="panel">
@@ -16,7 +19,7 @@ export function HoldingsTable({ holdings }: { holdings: HoldingRow[] }) {
         <div className="overflow-x">
           <table>
             <thead><tr><th>Ticker</th><th>Qty</th><th>Avg cost</th><th>Last close</th><th>Mkt value</th><th>Unrealized P&amp;L</th><th>Day</th></tr></thead>
-            <tbody>{holdings.map((h) => <RowGroup key={h.ticker} h={h} isOpen={open === h.ticker} onToggle={() => setOpen(open === h.ticker ? null : h.ticker)} />)}</tbody>
+            <tbody>{holdings.map((h) => <RowGroup key={h.ticker} h={h} dateFormat={dateFormat} defaultRangeDays={defaultRangeDays} isOpen={open === h.ticker} onToggle={() => setOpen(open === h.ticker ? null : h.ticker)} />)}</tbody>
           </table>
         </div>
       )}
@@ -24,7 +27,9 @@ export function HoldingsTable({ holdings }: { holdings: HoldingRow[] }) {
   );
 }
 
-function RowGroup({ h, isOpen, onToggle }: { h: HoldingRow; isOpen: boolean; onToggle: () => void }) {
+function RowGroup({ h, dateFormat, defaultRangeDays, isOpen, onToggle }: {
+  h: HoldingRow; dateFormat: DateFormat; defaultRangeDays: number | null; isOpen: boolean; onToggle: () => void;
+}) {
   const pnlCls = h.unrealizedPnl === null ? "" : h.unrealizedPnl > 0 ? "gain" : h.unrealizedPnl < 0 ? "loss" : "";
   const dayCls = h.dayChangePct === null ? "muted" : h.dayChangePct > 0 ? "gain" : h.dayChangePct < 0 ? "loss" : "";
   return (
@@ -48,7 +53,7 @@ function RowGroup({ h, isOpen, onToggle }: { h: HoldingRow; isOpen: boolean; onT
           <td colSpan={7}>
             <div className="detail-grid">
               <div>
-                <PriceChart points={h.spark} id={h.ticker.replace(/\W/g, "")} />
+                <PriceChart points={h.spark} id={h.ticker.replace(/\W/g, "")} dateFormat={dateFormat} defaultRangeDays={defaultRangeDays} />
                 <Link href={`/ticker/${encodeURIComponent(h.ticker)}`} className="btn" style={{ marginTop: 12, display: "inline-flex" }}>View details →</Link>
               </div>
               <div>

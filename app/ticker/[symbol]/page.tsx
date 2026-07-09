@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { tickerDetail } from "@/lib/ticker";
 import { egp } from "@/lib/format";
 import { TickerChartStats } from "@/components/TickerChartStats";
+import { readSettings, RANGE_DAYS } from "../../../lib/core/index.js";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export default async function TickerPage({ params }: { params: Promise<{ symbol:
   try { sym = decodeURIComponent(symbol); } catch { notFound(); } // malformed URL → 404, not 500
   const d = tickerDetail(sym);
   if (!d) notFound();
+  const settings = readSettings();
 
   return (
     <div className="grid" style={{ gap: 20 }}>
@@ -23,7 +25,7 @@ export default async function TickerPage({ params }: { params: Promise<{ symbol:
         <Link href="/" className="btn">← Portfolio</Link>
       </div>
 
-      <TickerChartStats ticker={d.ticker} bars={d.bars} lastClose={d.lastClose} position={d.position} />
+      <TickerChartStats ticker={d.ticker} bars={d.bars} lastClose={d.lastClose} position={d.position} dateFormat={settings.dateFormat} defaultRangeDays={RANGE_DAYS[settings.defaultPriceHistoryRange]} />
 
       <div className="panel">
         <div className="panel-head">Transaction history <span className="hint">{d.txns.length} entr{d.txns.length === 1 ? "y" : "ies"}</span></div>

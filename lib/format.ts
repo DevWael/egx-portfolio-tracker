@@ -1,3 +1,5 @@
+import type { DateFormat } from "./core/index.js";
+
 const fmt = new Intl.NumberFormat("en-EG", {
   style: "currency",
   currency: "EGP",
@@ -20,4 +22,12 @@ export function pct(x: number | null): string {
 export function toPiasters(egpValue: string | number): number {
   const n = typeof egpValue === "string" ? parseFloat(egpValue) : egpValue;
   return Math.round((Number.isFinite(n) ? n : 0) * 100);
+}
+
+/** ISO "YYYY-MM-DD" -> a display string per the dateFormat setting. */
+export function formatDate(dateStr: string, format: DateFormat): string {
+  if (format === "iso") return dateStr;
+  const dt = new Date(dateStr + "T00:00:00");
+  if (format === "en-US") return dt.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+  return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }

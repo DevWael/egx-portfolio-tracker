@@ -3,7 +3,7 @@ import { useState } from "react";
 import { egp, pct } from "@/lib/format";
 import { computeStats, type StatBar } from "@/lib/stats";
 import { PriceChart } from "@/components/PriceChart";
-import type { HoldingValuation } from "../lib/core/index.js";
+import type { HoldingValuation, DateFormat } from "../lib/core/index.js";
 
 const sign = (n: number | null) => (n === null ? "" : n > 0 ? "gain" : n < 0 ? "loss" : "");
 const rangeLabel = (p: number | null) => (p === 7 ? "1-week" : p === 30 ? "1-month" : p === 90 ? "3-month" : p === 180 ? "6-month" : p === 365 ? "52-week" : "All-time");
@@ -27,7 +27,10 @@ function RangeBar({ low, high, last, pctFromLow, pctFromHigh }: { low: number; h
   );
 }
 
-export function TickerChartStats({ ticker, bars, lastClose, position }: { ticker: string; bars: StatBar[]; lastClose: number | null; position: HoldingValuation | null }) {
+export function TickerChartStats({ ticker, bars, lastClose, position, dateFormat, defaultRangeDays }: {
+  ticker: string; bars: StatBar[]; lastClose: number | null; position: HoldingValuation | null;
+  dateFormat: DateFormat; defaultRangeDays: number | null;
+}) {
   const [period, setPeriod] = useState<number | null>(null); // null = Max; synced from the chart's period buttons
   const windowBars = period ? bars.slice(-period) : bars;
   const w = computeStats(windowBars);
@@ -40,7 +43,7 @@ export function TickerChartStats({ ticker, bars, lastClose, position }: { ticker
   return (
     <>
       <div className="panel panel-pad">
-        <PriceChart points={chartPoints} id={ticker.replace(/\W/g, "")} height={320} onPeriodChange={setPeriod} />
+        <PriceChart points={chartPoints} id={ticker.replace(/\W/g, "")} height={320} dateFormat={dateFormat} defaultRangeDays={defaultRangeDays} onPeriodChange={setPeriod} />
       </div>
 
       <div className="panel panel-pad">

@@ -964,9 +964,18 @@ export async function saveSettings(formData: FormData) {
 
 - [ ] **Step 12: Write `app/settings/page.tsx`**
 
+Every other page in this app that reads live server state (`app/page.tsx`, `app/digest/page.tsx`,
+`app/transactions/page.tsx`, `app/watchlist/page.tsx`, `app/ticker/[symbol]/page.tsx`) declares
+`export const dynamic = "force-dynamic";` to stop Next statically prerendering it at build time —
+`app/settings/page.tsx` needs the same, or it gets baked into a static page at whatever
+`settings.json` (or its absence) happened to look like at build time, and won't reliably reflect
+settings changed via the CLI/MCP while the server is running:
+
 ```tsx
 import { readSettings } from "../../lib/core/index.js";
 import { saveSettings } from "./actions";
+
+export const dynamic = "force-dynamic";
 
 export default function SettingsPage() {
   const s = readSettings();

@@ -1,17 +1,17 @@
 "use client";
 import { useRef, useState } from "react";
-import { egp, pct } from "@/lib/format";
+import { egp, pct, formatDate } from "@/lib/format";
 import type { SparkPoint } from "@/lib/metrics";
-
-function fmtDate(d: string): string {
-  const dt = new Date(d + "T00:00:00");
-  return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
+import type { DateFormat } from "../lib/core/index.js";
 
 const RANGES: [string, number | null][] = [["1W", 7], ["1M", 30], ["3M", 90], ["6M", 180], ["1Y", 365], ["Max", null]];
 
-function Area({ points, up, id, height, onZoom, onReset }: {
-  points: SparkPoint[]; up: boolean; id: string; height: number;
+function initialWindow(points: number, days: number | null): [number, number] | null {
+  return days === null ? null : [Math.max(0, points - days), points - 1];
+}
+
+function Area({ points, up, id, height, dateFormat, onZoom, onReset }: {
+  points: SparkPoint[]; up: boolean; id: string; height: number; dateFormat: DateFormat;
   onZoom: (a: number, b: number) => void; onReset: () => void;
 }) {
   const [hi, setHi] = useState<number | null>(null);
@@ -58,7 +58,7 @@ function Area({ points, up, id, height, onZoom, onReset }: {
         <>
           <div style={{ position: "absolute", left: `${dot.xPct}%`, top: `${dot.yPct}%`, width: 9, height: 9, marginLeft: -4.5, marginTop: -4.5, borderRadius: "50%", background: color, boxShadow: "0 0 0 3px var(--panel)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", left: `${dot.xPct}%`, top: -4, transform: `translateX(${dot.xPct > 60 ? "-106%" : "6%"})`, background: "var(--panel-2)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 9px", fontSize: 12, whiteSpace: "nowrap", pointerEvents: "none", zIndex: 2 }}>
-            <span className="muted">{fmtDate(points[hi!].date)}</span> · <b>{egp(values[hi!])}</b>
+            <span className="muted">{formatDate(points[hi!].date, dateFormat)}</span> · <b>{egp(values[hi!])}</b>
           </div>
         </>
       ) : null}
@@ -66,8 +66,11 @@ function Area({ points, up, id, height, onZoom, onReset }: {
   );
 }
 
-export function PriceChart({ points, id, height = 150, onPeriodChange }: { points: SparkPoint[]; id: string; height?: number; onPeriodChange?: (days: number | null) => void }) {
-  const [win, setWin] = useState<[number, number] | null>(null);
+export function PriceChart({ points, id, height = 150, dateFormat, defaultRangeDays, onPeriodChange }: {
+  points: SparkPoint[]; id: string; height?: number; dateFormat: DateFormat; defaultRangeDays: number | null;
+  onPeriodChange?: (days: number | null) => void;
+}) {
+  const [win, setWin] = useState<[number, number] | null>(() => initialWindow(points.length, defaultRangeDays));
   const s = win ? win[0] : 0;
   const e = win ? win[1] : points.length - 1;
   const pts = points.slice(s, e + 1);
@@ -87,10 +90,10 @@ export function PriceChart({ points, id, height = 150, onPeriodChange }: { point
           {chg !== null ? <span className={chg >= 0 ? "gain" : "loss"} style={{ fontSize: 13, fontWeight: 600 }}>{pct(chg)}</span> : null}
         </div>
       </div>
-      <Area points={pts} up={(chg ?? 0) >= 0} id={id} height={height} onZoom={(la, lb) => setWin([s + la, s + lb])} onReset={() => setWin(null)} />
+      <Area points={pts} up={(chg ?? 0) >= 0} id={id} height={height} dateFormat={dateFormat} onZoom={(la, lb) => setWin([s + la, s + lb])} onReset={() => setWin(null)} />
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-        <span className="muted" style={{ fontSize: 12 }}>{pts.length >= 1 ? fmtDate(pts[0].date) : ""}</span>
-        <span className="muted" style={{ fontSize: 12 }}>{pts.length >= 1 ? `${fmtDate(pts[pts.length - 1].date)} · ${egp(lastC)}` : ""}</span>
+        <span className="muted" style={{ fontSize: 12 }}>{pts.length >= 1 ? formatDate(pts[0].date, dateFormat) : ""}</span>
+        <span className="muted" style={{ fontSize: 12 }}>{pts.length >= 1 ? `${formatDate(pts[pts.length - 1].date, dateFormat)} · ${egp(lastC)}` : ""}</span>
       </div>
       <div className="muted" style={{ fontSize: 11, marginTop: 4, opacity: 0.7 }}>Drag to zoom · double-click to reset</div>
     </div>
