@@ -437,9 +437,15 @@ next-env.d.ts
     "tsx": "^4.19.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3"]
   }
 }
 ```
+
+The `"pnpm"` key replaces the same allowlist `pnpm-workspace.yaml` used to carry — without it, pnpm's
+default script-blocking leaves `better-sqlite3` without a compiled native binary (see Step 7).
 
 `tsx` is kept as a devDependency solely to run `scripts/demo.ts` (`packages/core`'s old terminal demo, already moved to `apps/web/scripts/demo.ts` in Task 1 Step 3b, arriving at `scripts/demo.ts` once this task's Step 2 moves `apps/web/scripts` up to the root) — it's no longer needed for an MCP stdio entrypoint, since that entrypoint no longer exists.
 
@@ -455,6 +461,21 @@ rmdir apps/web apps 2>/dev/null || find apps -type d -empty -delete
 ```bash
 rm -rf node_modules apps/web/node_modules pnpm-lock.yaml
 pnpm install
+```
+
+**If you see `Ignored build scripts: better-sqlite3, ...`:** `pnpm-workspace.yaml` (just deleted) carried an
+`onlyBuiltDependencies: [better-sqlite3]` allowlist that let pnpm run better-sqlite3's native build step;
+without it pnpm's default script-blocking leaves the module with no compiled `.node` binary at all — it
+will fail at runtime the moment anything calls `openDb()`. The equivalent setting for a single (non-workspace)
+package lives under a `"pnpm"` key in `package.json` — add it (see Step 5's `package.json` above, which
+should already include this) and rebuild:
+```bash
+pnpm rebuild better-sqlite3
+find node_modules/.pnpm -path "*better-sqlite3*/build/Release/better_sqlite3.node"
+```
+Expected: the find command prints a path — the compiled binary exists.
+
+```bash
 pnpm typecheck
 pnpm test
 pnpm build
