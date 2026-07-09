@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 export function ThemeToggle() {
   const [light, setLight] = useState(false);
   useEffect(() => {
-    const saved = localStorage.getItem("egx-theme");
-    const isLight = saved === "light";
-    setLight(isLight);
-    document.documentElement.classList.toggle("light", isLight);
+    setLight(document.documentElement.classList.contains("light"));
   }, []);
   function toggle() {
     const next = !light;

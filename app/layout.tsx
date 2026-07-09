@@ -12,6 +12,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const asOf = data.summary().asOf;
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'if(localStorage.getItem("egx-theme")==="light"){document.documentElement.classList.add("light")}',
+          }}
+        />
+      </head>
       <body suppressHydrationWarning>
         <div className="shell">
           <Sidebar watchlistBadge={badge} />
