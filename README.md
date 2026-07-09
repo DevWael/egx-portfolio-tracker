@@ -7,7 +7,7 @@ A personal, single-user tool to track equity positions on the **Egyptian Exchang
 ## Status
 
 Single Next.js app — dashboard, per-ticker pages, and an MCP server (over HTTP) all served from
-one process. ✅ **Complete** — 109 tests.
+one process. ✅ **Complete** — 110 tests.
 
 The EODHD client is verified end-to-end against **live EGX data** (real historical daily closes for `.EGX` tickers).
 
@@ -19,7 +19,7 @@ The EODHD client is verified end-to-end against **live EGX data** (real historic
   - a **52-week (period-synced) range bar** showing where the current price sits (% of range, from-low/from-high);
   - **derived stats** computed from stored prices — returns (1M/3M/6M/YTD/1Y), annualized volatility, max drawdown, 52-week high/low, volume;
   - your position + this ticker's transaction history. The period control drives the chart **and** the range + risk stats together.
-- **Transactions** — add/delete buys & sells (holdings and P&L are derived from these).
+- **Transactions** — add/delete buys & sells (holdings and P&L are derived from these). Just `COMI` works — `.EGX` is appended automatically.
 - **Watchlist** — price-target alerts (above/below), auto-marked "crossed" at the latest close.
 - **Load demo** (confirms first) and **Refresh prices** (live EODHD when a key is set).
 - **Data menu** — back up now, restore the latest backup (confirms first), export the raw SQLite file as a download.
@@ -61,6 +61,7 @@ docs/                design specs, implementation plans, UI brief + mockup
 - **MCP over HTTP, stateless.** The MCP endpoint (`app/api/mcp/route.ts`) builds a fresh `McpServer` + transport per request rather than a shared instance — required by the SDK for its stateless transport, and it sidesteps any risk of concurrent requests cross-wiring responses. No auth: the app is local-only.
 - **Settings are file-backed, not in the DB.** `settings.json` at the repo root (git-ignored, override with `EGX_SETTINGS_PATH`) holds personal preferences — theme, accent color, etc. — shared identically by the dashboard, MCP, and the CLI. Never secrets: `EODHD_API_KEY` stays an environment variable.
 - **Sector allocation colors are a validated categorical palette** — distinct hues in a fixed order (not shades of one hue), checked for colorblind-safe separation and contrast in both themes, rather than eyeballed.
+- **A security's name/sector is set once, not overwritten.** Adding a transaction or alert only upserts the security if it doesn't exist yet (name defaults to the ticker) — leaving those fields blank later never resets a real name/sector back to defaults.
 
 ## Tech stack
 
@@ -83,7 +84,7 @@ Set an [EODHD API key](https://eodhd.com) in `.env.local` (git-ignored):
 EODHD_API_KEY=your_key_here
 ```
 
-Then click **Refresh prices** to pull up to a year of daily history for your tickers. Without a key, tracking and demo data still work fully. EGX tickers use the `CODE.EGX` format (e.g. `COMI.EGX` for Commercial International Bank). Free tier: 1 year of history, 20 calls/day.
+Then click **Refresh prices** to pull up to a year of daily history for your tickers. Without a key, tracking and demo data still work fully. EGX tickers use the `CODE.EGX` format (e.g. `COMI.EGX` for Commercial International Bank) — the web forms auto-append `.EGX` if you leave it off; the MCP tools and CLI expect it typed out. Free tier: 1 year of history, 20 calls/day.
 
 ## MCP server (Claude Code)
 
@@ -125,7 +126,13 @@ pnpm egx record-transaction --ticker COMI.EGX --side buy --qty 100 --price 84.15
 | `set-settings` | `[--theme] [--accent-color] [--default-price-history-range] [--date-format]` |
 
 Behavior matches the MCP tools exactly — same validation, same EGP↔piaster conversion — since the
-CLI dispatches to the same tool definitions rather than reimplementing anything.
+CLI dispatches to the same tool definitions rather than reimplementing anything. Unlike the web
+forms, the CLI does **not** auto-append `.EGX` — type the full ticker.
+
+An AI-agent-facing reference for this CLI lives at
+[`.claude/skills/egx-cli/SKILL.md`](.claude/skills/egx-cli/SKILL.md) — a Claude Code skill any
+agent working in this repo can load to get the full command/flag reference without re-deriving it
+from source.
 
 ## Settings
 
@@ -142,7 +149,7 @@ how dark or light the chosen accent is. Saving shows a toast confirmation that f
 ### Tests & core demo
 
 ```bash
-pnpm test                           # 109 tests
+pnpm test                           # 110 tests
 pnpm typecheck
 pnpm demo                           # terminal demo of the engine (no key/network)
 ```
